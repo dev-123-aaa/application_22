@@ -7,6 +7,7 @@ interface VideoContextValue {
   videos: Video[];
   setVideos: (videos: Video[]) => void;
   addVideo: (video: Video) => void;
+  removeVideo: (projectId: string) => void;
   isModalOpen: boolean;
   openModal: () => void;
   closeModal: () => void;
@@ -28,6 +29,10 @@ export function VideoProvider({ children }: { children: React.ReactNode }) {
     setVideos((prev) => [video, ...prev]);
   }, []);
 
+  const removeVideo = useCallback((projectId: string) => {
+    setVideos((prev) => prev.filter((v) => v.project_id !== projectId));
+  }, []);
+
   const openModal = useCallback(() => {
     setIsModalOpen(true);
   }, []);
@@ -42,6 +47,7 @@ export function VideoProvider({ children }: { children: React.ReactNode }) {
         videos,
         setVideos,
         addVideo,
+        removeVideo,
         isModalOpen,
         openModal,
         closeModal,

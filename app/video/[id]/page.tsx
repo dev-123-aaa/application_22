@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { ArrowLeft, Loader2, AlertCircle, RefreshCw } from "lucide-react";
+import { ArrowLeft, Loader2, AlertCircle, RefreshCw, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { fetchProject } from "@/lib/api";
-import { Video } from "@/lib/types";
+import { fetchProject, triggerThumbnailWebhook, updateProjectStatus } from "@/lib/api";
+import { Video, canTriggerThumbnail } from "@/lib/types";
 import { Project } from "@/lib/db/schema";
 import { VideoHeader } from "@/components/video-detail/VideoHeader";
 import { OverviewCard } from "@/components/video-detail/OverviewCard";
@@ -54,6 +54,7 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
     message: string;
     type: "success" | "error" | "info";
   } | null>(null);
+  const [isTriggeringThumbnail, setIsTriggeringThumbnail] = useState(false);
   const isInitialLoad = useRef(true);
 
   const loadProject = useCallback(async (showLoadingState = true) => {
@@ -105,6 +106,39 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
 
   const hideToast = () => {
     setToast(null);
+  };
+
+  const handleTriggerThumbnail = async () => {
+    if (!video) return;
+
+    setIsTriggeringThumbnail(true);
+
+    try {
+      // Trigger the thumbnail webhook
+      const webhookResult = await triggerThumbnailWebhook(video.project_id);
+
+      if (!webhookResult.success) {
+        showToast(webhookResult.error || "Failed to trigger thumbnail generation", "error");
+        setIsTriggeringThumbnail(false);
+        return;
+      }
+
+      // Update project status to "Thumbnail creation"
+      const statusResult = await updateProjectStatus(video.project_id, "Thumbnail creation");
+
+      if (!statusResult.success) {
+        showToast("Webhook triggered but failed to update status", "error");
+      } else {
+        showToast("Thumbnail generation started", "success");
+        // Reload the project to get updated status
+        loadProject(false);
+      }
+    } catch (err) {
+      console.error("Failed to trigger thumbnail:", err);
+      showToast("Failed to trigger thumbnail generation", "error");
+    }
+
+    setIsTriggeringThumbnail(false);
   };
 
   // Loading state
@@ -194,11 +228,38 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
           onCopySuccess={() => showToast("Script copied to clipboard")}
         />
 
-        {/* Thumbnail Suggestions Grid */}
-        <ThumbnailGrid
-          thumbnails={video.thumbnail_suggestions}
-          status={video.status}
-        />
+        {/* Thumbnail Section with Generate Button */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-light uppercase tracking-widest text-gray-400">
+              Thumbnails
+            </h3>
+            {canTriggerThumbnail(video.status) && (
+              <Button
+                onClick={handleTriggerThumbnail}
+                disabled={isTriggeringThumbnail}
+                className="gap-2"
+                size="sm"
+              >
+                {isTriggeringThumbnail ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <ImageIcon className="h-4 w-4" />
+                    Generate Thumbnail
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
+          <ThumbnailGrid
+            thumbnails={video.thumbnail_suggestions}
+            status={video.status}
+          />
+        </div>
 
         {/* Pipeline Status Stepper */}
         <PipelineStatus status={video.status} />

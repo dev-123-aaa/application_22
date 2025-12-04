@@ -12,6 +12,9 @@ const headers = {
   "Surrogate-Control": "no-store",
 };
 
+// Allowed setting keys
+const ALLOWED_KEYS = ["webhook_url", "thumbnail_webhook_url"];
+
 // GET - Fetch current settings
 export async function GET() {
   console.log("GET /api/settings - Handler called at:", new Date().toISOString());
@@ -23,7 +26,7 @@ export async function GET() {
     const settings = await sql`
       SELECT key, value, updated_at
       FROM settings
-      WHERE key = 'webhook_url'
+      WHERE key = ANY(${ALLOWED_KEYS})
     `;
 
     console.log("GET /api/settings - Raw result type:", typeof settings);
@@ -31,18 +34,20 @@ export async function GET() {
     console.log("GET /api/settings - Length:", settings?.length);
     console.log("GET /api/settings - Raw result:", JSON.stringify(settings, null, 2));
 
-    if (!settings || settings.length === 0) {
-      console.log("GET /api/settings - No settings found");
-      return NextResponse.json(
-        { error: "Webhook URL not configured" },
-        { status: 404, headers }
-      );
-    }
-
-    const responseData = {
-      webhook_url: settings[0].value,
-      updated_at: settings[0].updated_at,
+    // Build response object with all settings
+    const responseData: Record<string, string | null> = {
+      webhook_url: null,
+      thumbnail_webhook_url: null,
+      updated_at: null,
     };
+
+    for (const setting of settings) {
+      responseData[setting.key] = setting.value;
+      // Use the most recent updated_at
+      if (!responseData.updated_at || new Date(setting.updated_at) > new Date(responseData.updated_at as string)) {
+        responseData.updated_at = setting.updated_at;
+      }
+    }
 
     console.log("GET /api/settings - Returning:", JSON.stringify(responseData));
     return NextResponse.json(responseData, { headers });
@@ -66,7 +71,7 @@ export async function PUT(request: Request) {
     const { key, value } = body;
 
     // Validate input
-    if (!key || !value) {
+    if (!key || value === undefined) {
       console.log("PUT /api/settings - Missing fields:", { key, value });
       return NextResponse.json(
         { error: "Missing required fields: key and value" },
@@ -74,26 +79,28 @@ export async function PUT(request: Request) {
       );
     }
 
-    if (key !== "webhook_url") {
+    if (!ALLOWED_KEYS.includes(key)) {
       return NextResponse.json(
-        { error: "Only webhook_url setting can be updated" },
+        { error: `Only ${ALLOWED_KEYS.join(", ")} settings can be updated` },
         { status: 400, headers }
       );
     }
 
-    // Validate URL format
-    try {
-      new URL(value);
-    } catch {
-      return NextResponse.json(
-        { error: "Invalid URL format" },
-        { status: 400, headers }
-      );
+    // Validate URL format if value is provided (allow empty string to clear)
+    if (value && value.length > 0) {
+      try {
+        new URL(value);
+      } catch {
+        return NextResponse.json(
+          { error: "Invalid URL format" },
+          { status: 400, headers }
+        );
+      }
     }
 
     // Update or insert the setting
     const sql = getDb();
-    console.log("PUT /api/settings - Executing SQL update for:", value);
+    console.log("PUT /api/settings - Executing SQL update for:", key, "=", value);
 
     const result = await sql`
       INSERT INTO settings (key, value, updated_at)
@@ -115,7 +122,7 @@ export async function PUT(request: Request) {
 
     const response = {
       success: true,
-      webhook_url: result[0].value,
+      [key]: result[0].value,
       updated_at: result[0].updated_at,
     };
 
