@@ -2,6 +2,13 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+// Disable caching
+const headers = {
+  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+  "Pragma": "no-cache",
+};
 
 // GET - Fetch single project by ID
 export async function GET(
@@ -10,6 +17,7 @@ export async function GET(
 ) {
   try {
     const { id } = params;
+    console.log("GET /api/projects/[id] - Fetching project:", id);
 
     const sql = getDb();
     const projects = await sql`
@@ -19,16 +27,17 @@ export async function GET(
     if (projects.length === 0) {
       return NextResponse.json(
         { error: "Project not found" },
-        { status: 404 }
+        { status: 404, headers }
       );
     }
 
-    return NextResponse.json({ project: projects[0] });
+    console.log("GET /api/projects/[id] - Found:", projects[0].status);
+    return NextResponse.json({ project: projects[0] }, { headers });
   } catch (error) {
     console.error("Failed to fetch project:", error);
     return NextResponse.json(
       { error: "Failed to fetch project" },
-      { status: 500 }
+      { status: 500, headers }
     );
   }
 }

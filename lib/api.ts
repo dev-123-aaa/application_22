@@ -190,7 +190,10 @@ export async function fetchProjects(): Promise<{
   error?: string;
 }> {
   try {
-    const response = await fetch("/api/projects");
+    // Cache-busting to prevent stale data
+    const response = await fetch(`/api/projects?t=${Date.now()}`, {
+      cache: "no-store",
+    });
 
     if (!response.ok) {
       throw new Error("Failed to fetch projects");
@@ -217,7 +220,10 @@ export async function fetchProject(id: string): Promise<{
   error?: string;
 }> {
   try {
-    const response = await fetch(`/api/projects/${id}`);
+    // Cache-busting to prevent stale data
+    const response = await fetch(`/api/projects/${id}?t=${Date.now()}`, {
+      cache: "no-store",
+    });
 
     if (response.status === 404) {
       return {
