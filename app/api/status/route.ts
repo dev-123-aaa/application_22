@@ -8,8 +8,8 @@ interface StatusUpdateRequest {
   status: string;
   script?: string;
   total_sections?: number;
-  main_characters?: string;
-  primary_locations?: string;
+  main_characters?: string | string[];
+  primary_locations?: string | string[];
   central_theme?: string;
   tone?: string;
   thumbnail_suggestions?: string[];
@@ -18,6 +18,19 @@ interface StatusUpdateRequest {
 
 // POST - Update project status (called by n8n)
 export async function POST(request: Request) {
+  // Security: Check webhook secret if configured
+  const webhookSecret = process.env.WEBHOOK_SECRET;
+  if (webhookSecret) {
+    const providedSecret = request.headers.get("x-webhook-secret");
+    if (providedSecret !== webhookSecret) {
+      console.log("POST /api/status - Unauthorized: invalid or missing secret");
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+  }
+
   try {
     let body: StatusUpdateRequest;
 
@@ -29,6 +42,8 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    console.log("POST /api/status - Received:", JSON.stringify(body));
 
     const {
       project_id,
@@ -58,6 +73,14 @@ export async function POST(request: Request) {
       );
     }
 
+    // Convert arrays to strings if needed (n8n might send arrays)
+    const mainCharsStr = Array.isArray(main_characters)
+      ? main_characters.join(", ")
+      : main_characters;
+    const locationsStr = Array.isArray(primary_locations)
+      ? primary_locations.join(", ")
+      : primary_locations;
+
     // Build the update query dynamically
     // Using COALESCE to only update fields that are provided
     const sql = getDb();
@@ -67,8 +90,8 @@ export async function POST(request: Request) {
         status = ${status},
         script = COALESCE(${script ?? null}, script),
         total_sections = COALESCE(${total_sections ?? null}, total_sections),
-        main_characters = COALESCE(${main_characters ?? null}, main_characters),
-        primary_locations = COALESCE(${primary_locations ?? null}, primary_locations),
+        main_characters = COALESCE(${mainCharsStr ?? null}, main_characters),
+        primary_locations = COALESCE(${locationsStr ?? null}, primary_locations),
         central_theme = COALESCE(${central_theme ?? null}, central_theme),
         tone = COALESCE(${tone ?? null}, tone),
         thumbnail_suggestions = COALESCE(${thumbnail_suggestions ?? null}, thumbnail_suggestions),
@@ -79,12 +102,14 @@ export async function POST(request: Request) {
     `;
 
     if (result.length === 0) {
+      console.log("POST /api/status - Project not found:", project_id);
       return NextResponse.json(
         { success: false, error: "Project not found" },
         { status: 404 }
       );
     }
 
+    console.log("POST /api/status - Updated:", result[0]);
     return NextResponse.json({
       success: true,
       project: {
@@ -94,7 +119,7 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    console.error("Failed to update project status:", error);
+    console.error("POST /api/status - Error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to update project status" },
       { status: 500 }
