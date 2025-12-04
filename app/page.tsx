@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import { VideoList } from "@/components/dashboard/VideoList";
 import { useVideos } from "@/lib/contexts/VideoContext";
 import { fetchProjects } from "@/lib/api";
@@ -8,6 +8,8 @@ import { Video } from "@/lib/types";
 import { Project } from "@/lib/db/schema";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+const POLL_INTERVAL = 10000; // 10 seconds
 
 // Convert database Project to Video type
 function projectToVideo(project: Project): Video {
@@ -28,11 +30,19 @@ function projectToVideo(project: Project): Video {
   };
 }
 
+// Check if a project is in progress (not finished or failed)
+function isProjectInProgress(status: string): boolean {
+  return !["Published", "Failed"].includes(status);
+}
+
 export default function DashboardPage() {
   const { videos, setVideos, isLoading, setIsLoading, error, setError } = useVideos();
+  const isInitialLoad = useRef(true);
 
-  const loadProjects = async () => {
-    setIsLoading(true);
+  const loadProjects = useCallback(async (showLoadingState = true) => {
+    if (showLoadingState) {
+      setIsLoading(true);
+    }
     setError(null);
 
     const result = await fetchProjects();
@@ -44,13 +54,33 @@ export default function DashboardPage() {
       setError(result.error || "Failed to load projects");
     }
 
-    setIsLoading(false);
-  };
+    if (showLoadingState) {
+      setIsLoading(false);
+    }
+  }, [setVideos, setIsLoading, setError]);
 
+  // Initial load
   useEffect(() => {
-    loadProjects();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (isInitialLoad.current) {
+      isInitialLoad.current = false;
+      loadProjects(true);
+    }
+  }, [loadProjects]);
+
+  // Polling for updates when there are in-progress projects
+  useEffect(() => {
+    const hasInProgressProjects = videos.some((v) => isProjectInProgress(v.status));
+
+    if (!hasInProgressProjects || isLoading) {
+      return;
+    }
+
+    const intervalId = setInterval(() => {
+      loadProjects(false); // Don't show loading state for background refresh
+    }, POLL_INTERVAL);
+
+    return () => clearInterval(intervalId);
+  }, [videos, isLoading, loadProjects]);
 
   return (
     <main className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -72,7 +102,7 @@ export default function DashboardPage() {
           </div>
           <h3 className="mb-2 text-lg font-light text-white">Failed to load projects</h3>
           <p className="mb-6 max-w-sm text-sm text-gray-400">{error}</p>
-          <Button variant="outline" className="gap-2" onClick={loadProjects}>
+          <Button variant="outline" className="gap-2" onClick={() => loadProjects(true)}>
             <RefreshCw className="h-4 w-4" />
             Try again
           </Button>

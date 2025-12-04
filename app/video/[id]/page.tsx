@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { ArrowLeft, Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,8 @@ import { ScriptSection } from "@/components/video-detail/ScriptSection";
 import { ThumbnailGrid } from "@/components/video-detail/ThumbnailGrid";
 import { PipelineStatus } from "@/components/video-detail/PipelineStatus";
 import { Toast } from "@/components/ui/toast";
+
+const POLL_INTERVAL = 10000; // 10 seconds
 
 interface VideoDetailPageProps {
   params: { id: string };
@@ -37,6 +39,11 @@ function projectToVideo(project: Project): Video {
   };
 }
 
+// Check if a project is in progress (not finished or failed)
+function isProjectInProgress(status: string): boolean {
+  return !["Published", "Failed"].includes(status);
+}
+
 export default function VideoDetailPage({ params }: VideoDetailPageProps) {
   const { id } = params;
   const [video, setVideo] = useState<Video | null>(null);
@@ -47,9 +54,12 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
     message: string;
     type: "success" | "error" | "info";
   } | null>(null);
+  const isInitialLoad = useRef(true);
 
-  const loadProject = async () => {
-    setIsLoading(true);
+  const loadProject = useCallback(async (showLoadingState = true) => {
+    if (showLoadingState) {
+      setIsLoading(true);
+    }
     setError(null);
     setNotFound(false);
 
@@ -63,13 +73,31 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
       setError(result.error || "Failed to load project");
     }
 
-    setIsLoading(false);
-  };
-
-  useEffect(() => {
-    loadProject();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (showLoadingState) {
+      setIsLoading(false);
+    }
   }, [id]);
+
+  // Initial load
+  useEffect(() => {
+    if (isInitialLoad.current) {
+      isInitialLoad.current = false;
+      loadProject(true);
+    }
+  }, [loadProject]);
+
+  // Polling for updates when project is in progress
+  useEffect(() => {
+    if (!video || !isProjectInProgress(video.status) || isLoading) {
+      return;
+    }
+
+    const intervalId = setInterval(() => {
+      loadProject(false); // Don't show loading state for background refresh
+    }, POLL_INTERVAL);
+
+    return () => clearInterval(intervalId);
+  }, [video, isLoading, loadProject]);
 
   const showToast = (message: string, type: "success" | "error" | "info" = "success") => {
     setToast({ message, type });
@@ -115,7 +143,7 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
           </div>
           <h2 className="mb-2 text-xl font-light text-white">Failed to load project</h2>
           <p className="mb-6 text-sm text-gray-400">{error}</p>
-          <Button variant="outline" className="gap-2" onClick={loadProject}>
+          <Button variant="outline" className="gap-2" onClick={() => loadProject(true)}>
             <RefreshCw className="h-4 w-4" />
             Try again
           </Button>
