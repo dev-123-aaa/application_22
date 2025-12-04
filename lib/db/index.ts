@@ -1,11 +1,7 @@
-import { neon, NeonQueryFunction } from "@neondatabase/serverless";
+import { neon } from "@neondatabase/serverless";
 
-// Lazy initialization to avoid build-time errors
-let _sql: NeonQueryFunction<false, false> | null = null;
-
-function getSql(): NeonQueryFunction<false, false> {
-  if (_sql) return _sql;
-
+// Create connection on first use (lazy initialization for serverless)
+function createSqlClient() {
   const DATABASE_URL = process.env.DATABASE_URL;
   if (!DATABASE_URL) {
     throw new Error(
@@ -13,17 +9,10 @@ function getSql(): NeonQueryFunction<false, false> {
       "Please add it to your .env.local file or Vercel environment variables."
     );
   }
-
-  _sql = neon(DATABASE_URL);
-  return _sql;
+  return neon(DATABASE_URL);
 }
 
-// Export a proxy that lazily initializes the connection
-export const sql = new Proxy({} as NeonQueryFunction<false, false>, {
-  apply(_target, _thisArg, args) {
-    return getSql()(args[0] as TemplateStringsArray, ...args.slice(1));
-  },
-  get(_target, prop) {
-    return Reflect.get(getSql(), prop);
-  },
-});
+// Getter function - call this to get the sql tagged template function
+export function getDb() {
+  return createSqlClient();
+}

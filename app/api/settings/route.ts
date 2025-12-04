@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { sql } from "@/lib/db";
+import { getDb } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 // GET - Fetch current settings
 export async function GET() {
   try {
+    const sql = getDb();
     const settings = await sql`
       SELECT key, value, updated_at
       FROM settings
@@ -64,6 +65,7 @@ export async function PUT(request: Request) {
     }
 
     // Update or insert the setting
+    const sql = getDb();
     const result = await sql`
       INSERT INTO settings (key, value, updated_at)
       VALUES (${key}, ${value}, NOW())

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { sql } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
 
 export const dynamic = "force-dynamic";
@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 // GET - Fetch all projects
 export async function GET() {
   try {
+    const sql = getDb();
     const projects = await sql`
       SELECT * FROM projects ORDER BY created_at DESC
     `;
@@ -51,6 +52,7 @@ export async function POST(request: Request) {
 
     const project_id = uuidv4();
 
+    const sql = getDb();
     const result = await sql`
       INSERT INTO projects (
         project_id,

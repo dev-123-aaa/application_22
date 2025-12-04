@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { sql } from "@/lib/db";
+import { getDb } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +60,7 @@ export async function POST(request: Request) {
 
     // Build the update query dynamically
     // Using COALESCE to only update fields that are provided
+    const sql = getDb();
     const result = await sql`
       UPDATE projects
       SET
