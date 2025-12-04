@@ -25,7 +25,10 @@ export function WebhookSettings() {
     setError(null);
 
     try {
-      const response = await fetch("/api/settings");
+      // Add cache-busting query param to prevent stale data
+      const response = await fetch(`/api/settings?t=${Date.now()}`, {
+        cache: "no-store",
+      });
 
       if (!response.ok) {
         if (response.status === 404) {
@@ -33,15 +36,18 @@ export function WebhookSettings() {
           setStatus("idle");
           return;
         }
-        throw new Error("Failed to fetch settings");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to fetch settings");
       }
 
       const data = await response.json();
+      console.log("Fetched settings:", data);
       setWebhookUrl(data.webhook_url);
       setOriginalUrl(data.webhook_url);
       setLastUpdated(data.updated_at);
       setStatus("idle");
     } catch (err) {
+      console.error("Fetch settings error:", err);
       setError(err instanceof Error ? err.message : "Failed to load settings");
       setStatus("error");
     }
@@ -60,18 +66,24 @@ export function WebhookSettings() {
     setError(null);
 
     try {
+      const payload = { key: "webhook_url", value: webhookUrl };
+      console.log("Saving settings:", payload);
+
       const response = await fetch("/api/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key: "webhook_url", value: webhookUrl }),
+        body: JSON.stringify(payload),
+        cache: "no-store",
       });
 
+      const data = await response.json();
+      console.log("Save response:", response.status, data);
+
       if (!response.ok) {
-        const data = await response.json();
         throw new Error(data.error || "Failed to save settings");
       }
 
-      const data = await response.json();
+      setWebhookUrl(data.webhook_url);
       setOriginalUrl(data.webhook_url);
       setLastUpdated(data.updated_at);
       setStatus("success");
@@ -81,6 +93,7 @@ export function WebhookSettings() {
         setStatus("idle");
       }, 3000);
     } catch (err) {
+      console.error("Save settings error:", err);
       setError(err instanceof Error ? err.message : "Failed to save settings");
       setStatus("error");
     }
