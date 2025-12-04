@@ -5,6 +5,7 @@ import { VideoCard } from "./VideoCard";
 import { VideoCardSkeleton } from "./VideoCardSkeleton";
 import { Button } from "@/components/ui/button";
 import { Plus, Film } from "lucide-react";
+import { useVideos } from "@/lib/contexts/VideoContext";
 
 interface VideoListProps {
   videos: Video[];
@@ -12,6 +13,8 @@ interface VideoListProps {
 }
 
 export function VideoList({ videos, isLoading = false }: VideoListProps) {
+  const { openModal } = useVideos();
+
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -30,9 +33,9 @@ export function VideoList({ videos, isLoading = false }: VideoListProps) {
         </div>
         <h3 className="mb-2 text-lg font-light text-white">No videos yet</h3>
         <p className="mb-6 max-w-sm text-sm text-gray-500">
-          Create your first video to get started. Your production pipeline awaits.
+          Click &apos;New Video&apos; to start your first production.
         </p>
-        <Button variant="outline" className="gap-2">
+        <Button variant="outline" className="gap-2" onClick={openModal}>
           <Plus className="h-4 w-4" />
           Create your first video
         </Button>

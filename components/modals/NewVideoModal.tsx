@@ -13,12 +13,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useVideos } from "@/lib/contexts/VideoContext";
-import {
-  startProduction,
-  formatDuration,
-  generateProjectId,
-} from "@/lib/api";
+import { startProduction, fetchWebhookUrl } from "@/lib/api";
 import { Video } from "@/lib/types";
+import { Project } from "@/lib/db/schema";
 
 interface FormData {
   title: string;
@@ -35,9 +32,29 @@ interface FormErrors {
 interface NewVideoModalProps {
   onSuccess: (title: string) => void;
   onError: (message: string) => void;
+  onWarning?: (message: string) => void;
 }
 
-export function NewVideoModal({ onSuccess, onError }: NewVideoModalProps) {
+// Convert database Project to Video type
+function projectToVideo(project: Project): Video {
+  return {
+    project_id: project.project_id,
+    title: project.title,
+    status: project.status as Video["status"],
+    created_at: project.created_at,
+    total_sections: project.total_sections || 0,
+    duration_hours: project.duration_hours,
+    duration_minutes: project.duration_minutes,
+    main_characters: project.main_characters || "",
+    primary_locations: project.primary_locations || "",
+    central_theme: project.central_theme || "",
+    tone: project.tone || "",
+    script: project.script || undefined,
+    thumbnail_suggestions: project.thumbnail_suggestions || undefined,
+  };
+}
+
+export function NewVideoModal({ onSuccess, onError, onWarning }: NewVideoModalProps) {
   const { isModalOpen, closeModal, addVideo } = useVideos();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<FormData>({
@@ -91,32 +108,44 @@ export function NewVideoModal({ onSuccess, onError }: NewVideoModalProps) {
 
     const hours = parseInt(formData.hours, 10);
     const minutes = parseInt(formData.minutes, 10);
-    const duration = formatDuration(hours, minutes);
 
     try {
+      // Prefetch webhook URL to give better error messages
+      const webhookUrl = await fetchWebhookUrl();
+
+      if (!webhookUrl) {
+        // Warn user but allow them to proceed
+        const proceed = window.confirm(
+          "Webhook URL is not configured. The project will be saved but the production pipeline won't be triggered.\n\nDo you want to continue?"
+        );
+        if (!proceed) {
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       const result = await startProduction({
         title: formData.title.trim(),
-        duration,
+        duration_hours: hours,
+        duration_minutes: minutes,
       });
 
-      if (result.success) {
-        // Create optimistic video entry
-        const newVideo: Video = {
-          project_id: generateProjectId(),
-          title: formData.title.trim(),
-          status: "Outline in progress",
-          created_at: new Date().toISOString(),
-          total_sections: 0,
-          duration_hours: hours,
-          duration_minutes: minutes,
-          main_characters: "",
-          primary_locations: "",
-          central_theme: "",
-          tone: "",
-        };
-
+      if (result.success && result.project) {
+        // Convert project to video and add to state
+        const newVideo = projectToVideo(result.project);
         addVideo(newVideo);
-        onSuccess(formData.title.trim());
+
+        if (result.webhookFailed) {
+          // Project saved but webhook failed
+          if (onWarning) {
+            onWarning(result.error || "Project saved but webhook trigger failed");
+          } else {
+            onError(result.error || "Project saved but webhook trigger failed");
+          }
+        } else {
+          onSuccess(formData.title.trim());
+        }
+
         resetForm();
         closeModal();
       } else {

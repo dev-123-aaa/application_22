@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { mockVideos } from "@/lib/mock-data";
+import { fetchProject } from "@/lib/api";
+import { Video } from "@/lib/types";
+import { Project } from "@/lib/db/schema";
 import { VideoHeader } from "@/components/video-detail/VideoHeader";
 import { OverviewCard } from "@/components/video-detail/OverviewCard";
 import { ScriptSection } from "@/components/video-detail/ScriptSection";
@@ -16,13 +18,58 @@ interface VideoDetailPageProps {
   params: { id: string };
 }
 
+// Convert database Project to Video type
+function projectToVideo(project: Project): Video {
+  return {
+    project_id: project.project_id,
+    title: project.title,
+    status: project.status as Video["status"],
+    created_at: project.created_at,
+    total_sections: project.total_sections || 0,
+    duration_hours: project.duration_hours,
+    duration_minutes: project.duration_minutes,
+    main_characters: project.main_characters || "",
+    primary_locations: project.primary_locations || "",
+    central_theme: project.central_theme || "",
+    tone: project.tone || "",
+    script: project.script || undefined,
+    thumbnail_suggestions: project.thumbnail_suggestions || undefined,
+  };
+}
+
 export default function VideoDetailPage({ params }: VideoDetailPageProps) {
   const { id } = params;
-  const video = mockVideos.find((v) => v.project_id === id);
+  const [video, setVideo] = useState<Video | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [notFound, setNotFound] = useState(false);
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error" | "info";
   } | null>(null);
+
+  const loadProject = async () => {
+    setIsLoading(true);
+    setError(null);
+    setNotFound(false);
+
+    const result = await fetchProject(id);
+
+    if (result.success && result.project) {
+      setVideo(projectToVideo(result.project));
+    } else if (result.error === "Project not found") {
+      setNotFound(true);
+    } else {
+      setError(result.error || "Failed to load project");
+    }
+
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    loadProject();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   const showToast = (message: string, type: "success" | "error" | "info" = "success") => {
     setToast({ message, type });
@@ -32,8 +79,53 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
     setToast(null);
   };
 
+  // Loading state
+  if (isLoading) {
+    return (
+      <main className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <Link href="/">
+          <Button variant="ghost" size="sm" className="mb-8 -ml-2 gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Dashboard
+          </Button>
+        </Link>
+
+        <div className="flex flex-col items-center justify-center rounded-lg border border-zinc-800/50 bg-zinc-900/50 py-16 text-center">
+          <Loader2 className="mb-4 h-8 w-8 text-cyan-400 animate-spin" />
+          <p className="text-sm text-gray-400">Loading project...</p>
+        </div>
+      </main>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <main className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <Link href="/">
+          <Button variant="ghost" size="sm" className="mb-8 -ml-2 gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Dashboard
+          </Button>
+        </Link>
+
+        <div className="flex flex-col items-center justify-center rounded-lg border border-red-500/20 bg-red-500/5 py-16 text-center">
+          <div className="mb-4 rounded-full bg-red-500/10 p-4">
+            <AlertCircle className="h-8 w-8 text-red-400" />
+          </div>
+          <h2 className="mb-2 text-xl font-light text-white">Failed to load project</h2>
+          <p className="mb-6 text-sm text-gray-400">{error}</p>
+          <Button variant="outline" className="gap-2" onClick={loadProject}>
+            <RefreshCw className="h-4 w-4" />
+            Try again
+          </Button>
+        </div>
+      </main>
+    );
+  }
+
   // Video not found state
-  if (!video) {
+  if (notFound || !video) {
     return (
       <main className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <Link href="/">

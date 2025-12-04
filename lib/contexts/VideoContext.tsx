@@ -2,21 +2,27 @@
 
 import React, { createContext, useContext, useState, useCallback } from "react";
 import { Video } from "@/lib/types";
-import { mockVideos } from "@/lib/mock-data";
 
 interface VideoContextValue {
   videos: Video[];
+  setVideos: (videos: Video[]) => void;
   addVideo: (video: Video) => void;
   isModalOpen: boolean;
   openModal: () => void;
   closeModal: () => void;
+  isLoading: boolean;
+  setIsLoading: (loading: boolean) => void;
+  error: string | null;
+  setError: (error: string | null) => void;
 }
 
 const VideoContext = createContext<VideoContextValue | undefined>(undefined);
 
 export function VideoProvider({ children }: { children: React.ReactNode }) {
-  const [videos, setVideos] = useState<Video[]>(mockVideos);
+  const [videos, setVideos] = useState<Video[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const addVideo = useCallback((video: Video) => {
     setVideos((prev) => [video, ...prev]);
@@ -34,10 +40,15 @@ export function VideoProvider({ children }: { children: React.ReactNode }) {
     <VideoContext.Provider
       value={{
         videos,
+        setVideos,
         addVideo,
         isModalOpen,
         openModal,
         closeModal,
+        isLoading,
+        setIsLoading,
+        error,
+        setError,
       }}
     >
       {children}
