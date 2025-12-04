@@ -2,36 +2,52 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 // Disable caching for this endpoint
 const headers = {
-  "Cache-Control": "no-store, no-cache, must-revalidate",
+  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
   "Pragma": "no-cache",
+  "Expires": "0",
+  "Surrogate-Control": "no-store",
 };
 
 // GET - Fetch current settings
 export async function GET() {
+  console.log("GET /api/settings - Handler called at:", new Date().toISOString());
+
   try {
     const sql = getDb();
+    console.log("GET /api/settings - Database connection created");
+
     const settings = await sql`
       SELECT key, value, updated_at
       FROM settings
       WHERE key = 'webhook_url'
     `;
 
-    if (settings.length === 0) {
+    console.log("GET /api/settings - Raw result type:", typeof settings);
+    console.log("GET /api/settings - Is array:", Array.isArray(settings));
+    console.log("GET /api/settings - Length:", settings?.length);
+    console.log("GET /api/settings - Raw result:", JSON.stringify(settings, null, 2));
+
+    if (!settings || settings.length === 0) {
+      console.log("GET /api/settings - No settings found");
       return NextResponse.json(
         { error: "Webhook URL not configured" },
         { status: 404, headers }
       );
     }
 
-    return NextResponse.json({
+    const responseData = {
       webhook_url: settings[0].value,
       updated_at: settings[0].updated_at,
-    }, { headers });
+    };
+
+    console.log("GET /api/settings - Returning:", JSON.stringify(responseData));
+    return NextResponse.json(responseData, { headers });
   } catch (error) {
-    console.error("Failed to fetch settings:", error);
+    console.error("GET /api/settings - Error:", error);
     return NextResponse.json(
       { error: "Failed to fetch settings" },
       { status: 500, headers }
@@ -41,6 +57,8 @@ export async function GET() {
 
 // PUT - Update webhook URL
 export async function PUT(request: Request) {
+  console.log("PUT /api/settings - Handler called at:", new Date().toISOString());
+
   try {
     const body = await request.json();
     console.log("PUT /api/settings - Received body:", JSON.stringify(body));
@@ -104,7 +122,7 @@ export async function PUT(request: Request) {
     console.log("PUT /api/settings - Returning:", JSON.stringify(response));
     return NextResponse.json(response, { headers });
   } catch (error) {
-    console.error("Failed to update settings:", error);
+    console.error("PUT /api/settings - Error:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to update settings" },
       { status: 500, headers }
