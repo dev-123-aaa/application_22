@@ -7,6 +7,7 @@ export type Channel = {
   avatar_url: string | null;
   created_at: string;
   updated_at: string;
+  project_count?: number; // Only included in list queries
 };
 
 export type Project = {

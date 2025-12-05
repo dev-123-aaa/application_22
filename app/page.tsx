@@ -3,10 +3,11 @@
 import { useEffect, useCallback, useRef } from "react";
 import { VideoList } from "@/components/dashboard/VideoList";
 import { useVideos } from "@/lib/contexts/VideoContext";
+import { useChannel } from "@/components/channel/ChannelProvider";
 import { fetchProjects } from "@/lib/api";
 import { Video } from "@/lib/types";
 import { Project } from "@/lib/db/schema";
-import { AlertCircle, RefreshCw } from "lucide-react";
+import { AlertCircle, RefreshCw, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const POLL_INTERVAL = 10000; // 10 seconds
@@ -37,15 +38,16 @@ function isProjectInProgress(status: string): boolean {
 
 export default function DashboardPage() {
   const { videos, setVideos, isLoading, setIsLoading, error, setError } = useVideos();
-  const isInitialLoad = useRef(true);
+  const { selectedChannel, isLoading: isChannelLoading } = useChannel();
+  const previousChannelId = useRef<string | null>(null);
 
-  const loadProjects = useCallback(async (showLoadingState = true) => {
+  const loadProjects = useCallback(async (channelId: string | undefined, showLoadingState = true) => {
     if (showLoadingState) {
       setIsLoading(true);
     }
     setError(null);
 
-    const result = await fetchProjects();
+    const result = await fetchProjects(channelId);
 
     if (result.success && result.projects) {
       const videoList = result.projects.map(projectToVideo);
@@ -59,28 +61,48 @@ export default function DashboardPage() {
     }
   }, [setVideos, setIsLoading, setError]);
 
-  // Initial load
+  // Load projects when channel changes
   useEffect(() => {
-    if (isInitialLoad.current) {
-      isInitialLoad.current = false;
-      loadProjects(true);
+    if (isChannelLoading) return;
+
+    const currentChannelId = selectedChannel?.channel_id || undefined;
+
+    // Only reload if channel actually changed
+    if (previousChannelId.current !== currentChannelId) {
+      previousChannelId.current = currentChannelId || null;
+      loadProjects(currentChannelId, true);
     }
-  }, [loadProjects]);
+  }, [selectedChannel, isChannelLoading, loadProjects]);
 
   // Polling for updates when there are in-progress projects
   useEffect(() => {
+    if (isChannelLoading) return;
+
     const hasInProgressProjects = videos.some((v) => isProjectInProgress(v.status));
 
     if (!hasInProgressProjects || isLoading) {
       return;
     }
 
+    const channelId = selectedChannel?.channel_id || undefined;
     const intervalId = setInterval(() => {
-      loadProjects(false); // Don't show loading state for background refresh
+      loadProjects(channelId, false); // Don't show loading state for background refresh
     }, POLL_INTERVAL);
 
     return () => clearInterval(intervalId);
-  }, [videos, isLoading, loadProjects]);
+  }, [videos, isLoading, selectedChannel, isChannelLoading, loadProjects]);
+
+  // Show loading while channel is loading
+  if (isChannelLoading) {
+    return (
+      <main className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="flex flex-col items-center justify-center py-16">
+          <Loader2 className="h-8 w-8 text-cyan-400 animate-spin mb-4" />
+          <p className="text-sm text-gray-400">Loading channels...</p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -91,6 +113,8 @@ export default function DashboardPage() {
         <p className="mt-1 text-sm text-gray-500">
           {isLoading
             ? "Loading projects..."
+            : selectedChannel
+            ? `${videos.length} project${videos.length !== 1 ? "s" : ""} for ${selectedChannel.name}`
             : `${videos.length} project${videos.length !== 1 ? "s" : ""} in your production pipeline`}
         </p>
       </div>
@@ -102,13 +126,25 @@ export default function DashboardPage() {
           </div>
           <h3 className="mb-2 text-lg font-light text-white">Failed to load projects</h3>
           <p className="mb-6 max-w-sm text-sm text-gray-400">{error}</p>
-          <Button variant="outline" className="gap-2" onClick={() => loadProjects(true)}>
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={() => loadProjects(selectedChannel?.channel_id, true)}
+          >
             <RefreshCw className="h-4 w-4" />
             Try again
           </Button>
         </div>
       ) : (
-        <VideoList videos={videos} isLoading={isLoading} />
+        <VideoList
+          videos={videos}
+          isLoading={isLoading}
+          emptyMessage={
+            selectedChannel
+              ? `No videos yet for ${selectedChannel.name}. Click 'New Video' to start your first production.`
+              : undefined
+          }
+        />
       )}
     </main>
   );

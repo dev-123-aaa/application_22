@@ -10,12 +10,17 @@ const headers = {
   "Pragma": "no-cache",
 };
 
-// GET - Fetch all channels
+// GET - Fetch all channels with project counts
 export async function GET() {
   try {
     const sql = getDb();
     const channels = await sql`
-      SELECT * FROM channels ORDER BY name ASC
+      SELECT c.*,
+             COALESCE(COUNT(p.project_id), 0)::int as project_count
+      FROM channels c
+      LEFT JOIN projects p ON c.channel_id = p.channel_id
+      GROUP BY c.channel_id
+      ORDER BY c.name ASC
     `;
 
     return NextResponse.json({ channels }, { headers });

@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useVideos } from "@/lib/contexts/VideoContext";
+import { useChannel } from "@/components/channel/ChannelProvider";
 import { startProduction, fetchWebhookUrl } from "@/lib/api";
 import { Video } from "@/lib/types";
 import { Project } from "@/lib/db/schema";
@@ -56,6 +57,7 @@ function projectToVideo(project: Project): Video {
 
 export function NewVideoModal({ onSuccess, onError, onWarning }: NewVideoModalProps) {
   const { isModalOpen, closeModal, addVideo } = useVideos();
+  const { selectedChannel } = useChannel();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     title: "",
@@ -128,6 +130,8 @@ export function NewVideoModal({ onSuccess, onError, onWarning }: NewVideoModalPr
         title: formData.title.trim(),
         duration_hours: hours,
         duration_minutes: minutes,
+        channel_id: selectedChannel?.channel_id,
+        channel_name: selectedChannel?.name,
       });
 
       if (result.success && result.project) {
@@ -169,6 +173,34 @@ export function NewVideoModal({ onSuccess, onError, onWarning }: NewVideoModalPr
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-6">
+          {/* Channel field (read-only) */}
+          <div className="space-y-2">
+            <Label>Channel</Label>
+            {selectedChannel ? (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-zinc-800/50 border border-zinc-700/50">
+                <span
+                  className="h-2.5 w-2.5 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: selectedChannel.color }}
+                />
+                <span className="text-sm font-light text-white">
+                  {selectedChannel.name}
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-red-500/10 border border-red-500/30">
+                <span className="text-sm text-red-400">
+                  No channel selected
+                </span>
+              </div>
+            )}
+            <p className="text-xs text-gray-500">
+              {selectedChannel
+                ? "Creating video for this channel"
+                : "Switch channels in the header to select a channel first"
+              }
+            </p>
+          </div>
+
           {/* Title field */}
           <div className="space-y-2">
             <Label htmlFor="title" error={!!errors.title}>
@@ -258,7 +290,7 @@ export function NewVideoModal({ onSuccess, onError, onWarning }: NewVideoModalPr
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !selectedChannel}
               className="w-full sm:w-auto"
             >
               {isSubmitting ? (

@@ -5,6 +5,8 @@ let cachedWebhookUrl: string | null = null;
 
 export interface StartProductionPayload {
   project_id: string;
+  channel_id: string | null;
+  channel_name: string | null;
   title: string;
   duration: string;
 }
@@ -19,6 +21,8 @@ export interface CreateProjectPayload {
   title: string;
   duration_hours: number;
   duration_minutes: number;
+  channel_id?: string;
+  channel_name?: string;
 }
 
 export interface CreateProjectResponse {
@@ -161,6 +165,8 @@ export async function startProduction(
   // Step 3: Trigger webhook
   const webhookPayload: StartProductionPayload = {
     project_id: project.project_id,
+    channel_id: payload.channel_id || null,
+    channel_name: payload.channel_name || null,
     title: project.title,
     duration: formatDuration(project.duration_hours, project.duration_minutes),
   };
@@ -183,15 +189,20 @@ export async function startProduction(
   };
 }
 
-// Fetch all projects from database
-export async function fetchProjects(): Promise<{
+// Fetch all projects from database (optionally filtered by channel)
+export async function fetchProjects(channelId?: string): Promise<{
   success: boolean;
   projects?: Project[];
   error?: string;
 }> {
   try {
-    // Cache-busting to prevent stale data
-    const response = await fetch(`/api/projects?t=${Date.now()}`, {
+    // Build URL with optional channel filter and cache-busting
+    const params = new URLSearchParams({ t: Date.now().toString() });
+    if (channelId) {
+      params.set("channel_id", channelId);
+    }
+
+    const response = await fetch(`/api/projects?${params.toString()}`, {
       cache: "no-store",
     });
 

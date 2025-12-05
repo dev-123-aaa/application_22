@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Plus, BarChart3, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useVideos } from "@/lib/contexts/VideoContext";
+import { ChannelSwitcher } from "@/components/channel/ChannelSwitcher";
 import { cn } from "@/lib/utils";
 
 export function Header() {
@@ -18,15 +19,18 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-zinc-800/50 bg-zinc-950/80 backdrop-blur-sm">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-6">
-          <Link href="/">
+        <div className="flex items-center gap-4 sm:gap-6">
+          <Link href="/" className="hidden sm:block">
             <h1 className="text-xl font-extralight tracking-wide text-white">
               <span className="text-cyan-400">Cartoonolgy</span> Studio
             </h1>
           </Link>
 
-          {/* Navigation */}
-          <nav className="hidden sm:flex items-center gap-1">
+          {/* Channel Switcher */}
+          <ChannelSwitcher />
+
+          {/* Navigation - hidden on mobile */}
+          <nav className="hidden lg:flex items-center gap-1">
             <Link
               href="/"
               className={cn(
@@ -65,9 +69,9 @@ export function Header() {
           </nav>
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* Mobile Navigation Icons */}
-          <Link href="/analytics" className="sm:hidden">
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Mobile/Tablet Navigation Icons */}
+          <Link href="/analytics" className="lg:hidden">
             <Button
               variant={isAnalyticsPage ? "secondary" : "ghost"}
               size="icon"
@@ -78,7 +82,7 @@ export function Header() {
               <BarChart3 className="h-4 w-4" />
             </Button>
           </Link>
-          <Link href="/settings" className="sm:hidden">
+          <Link href="/settings" className="lg:hidden">
             <Button
               variant={isSettingsPage ? "secondary" : "ghost"}
               size="icon"
