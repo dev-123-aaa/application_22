@@ -3,11 +3,13 @@ export type VideoStatus =
   | "Outline done"
   | "Sections in creation"
   | "Sections done"
-  | "Script Assembly"
+  | "Script Assembly in progress"
+  | "Script Assembly done"
   | "Voiceover in progress"
   | "Voiceover done"
   | "Images generating"
-  | "Video assembly"
+  | "Video Assembly in progress"
+  | "Video Assembly done"
   | "Thumbnail creation"
   | "Upload pending"
   | "Published"
@@ -51,11 +53,13 @@ export function getStageFromStatus(status: VideoStatus): number {
     "Outline done": 0,
     "Sections in creation": 1,
     "Sections done": 1,
-    "Script Assembly": 2,
+    "Script Assembly in progress": 2,
+    "Script Assembly done": 2,
     "Voiceover in progress": 3,
     "Voiceover done": 3,
     "Images generating": 4,
-    "Video assembly": 5,
+    "Video Assembly in progress": 5,
+    "Video Assembly done": 5,
     "Thumbnail creation": 6,
     "Upload pending": 7,
     "Published": 8,
@@ -73,7 +77,9 @@ export function isStageComplete(status: VideoStatus, stageIndex: number): boolea
   const doneStatuses: VideoStatus[] = [
     "Outline done",
     "Sections done",
+    "Script Assembly done",
     "Voiceover done",
+    "Video Assembly done",
     "Published",
   ];
 
@@ -86,13 +92,28 @@ export function isStageComplete(status: VideoStatus, stageIndex: number): boolea
 // Check if script should be available based on status
 export function hasScriptReady(status: VideoStatus): boolean {
   const postScriptStatuses: VideoStatus[] = [
+    "Script Assembly done",
     "Voiceover in progress",
     "Voiceover done",
     "Images generating",
-    "Video assembly",
+    "Video Assembly in progress",
+    "Video Assembly done",
     "Thumbnail creation",
     "Upload pending",
     "Published",
   ];
   return postScriptStatuses.includes(status);
+}
+
+// Check if thumbnail generation can be triggered (Script Assembly done or later)
+export function canTriggerThumbnail(status: VideoStatus): boolean {
+  const eligibleStatuses: VideoStatus[] = [
+    "Script Assembly done",
+    "Voiceover in progress",
+    "Voiceover done",
+    "Images generating",
+    "Video Assembly in progress",
+    "Video Assembly done",
+  ];
+  return eligibleStatuses.includes(status);
 }

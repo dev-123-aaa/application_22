@@ -5,6 +5,8 @@ let cachedWebhookUrl: string | null = null;
 
 export interface StartProductionPayload {
   project_id: string;
+  channel_id: string | null;
+  channel_name: string | null;
   title: string;
   duration: string;
 }
@@ -19,6 +21,8 @@ export interface CreateProjectPayload {
   title: string;
   duration_hours: number;
   duration_minutes: number;
+  channel_id?: string;
+  channel_name?: string;
 }
 
 export interface CreateProjectResponse {
@@ -161,6 +165,8 @@ export async function startProduction(
   // Step 3: Trigger webhook
   const webhookPayload: StartProductionPayload = {
     project_id: project.project_id,
+    channel_id: payload.channel_id || null,
+    channel_name: payload.channel_name || null,
     title: project.title,
     duration: formatDuration(project.duration_hours, project.duration_minutes),
   };
@@ -183,15 +189,20 @@ export async function startProduction(
   };
 }
 
-// Fetch all projects from database
-export async function fetchProjects(): Promise<{
+// Fetch all projects from database (optionally filtered by channel)
+export async function fetchProjects(channelId?: string): Promise<{
   success: boolean;
   projects?: Project[];
   error?: string;
 }> {
   try {
-    // Cache-busting to prevent stale data
-    const response = await fetch(`/api/projects?t=${Date.now()}`, {
+    // Build URL with optional channel filter and cache-busting
+    const params = new URLSearchParams({ t: Date.now().toString() });
+    if (channelId) {
+      params.set("channel_id", channelId);
+    }
+
+    const response = await fetch(`/api/projects?${params.toString()}`, {
       cache: "no-store",
     });
 
@@ -256,4 +267,120 @@ export function formatDuration(hours: number, minutes: number): string {
 
 export function generateProjectId(): string {
   return `vid_${Date.now().toString(36)}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
+// Fetch thumbnail webhook URL from settings
+export async function fetchThumbnailWebhookUrl(): Promise<string | null> {
+  try {
+    const response = await fetch(`/api/settings?t=${Date.now()}`, {
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      return null;
+    }
+    const data = await response.json();
+    return data.thumbnail_webhook_url || null;
+  } catch (error) {
+    console.error("Failed to fetch thumbnail webhook URL:", error);
+    return null;
+  }
+}
+
+// Trigger thumbnail webhook
+export async function triggerThumbnailWebhook(
+  projectId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Get the thumbnail webhook URL
+    const webhookUrl = await fetchThumbnailWebhookUrl();
+
+    if (!webhookUrl) {
+      return {
+        success: false,
+        error: "Thumbnail webhook URL not configured. Please configure it in Settings.",
+      };
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ project_id: projectId }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`Webhook returned status ${response.status}`);
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Thumbnail webhook trigger failed:", error);
+    if (error instanceof Error && error.name === "AbortError") {
+      return { success: false, error: "Webhook request timed out" };
+    }
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Webhook trigger failed",
+    };
+  }
+}
+
+// Update project status
+export async function updateProjectStatus(
+  projectId: string,
+  status: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch(`/api/projects/${projectId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ status }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || "Failed to update status");
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to update project status:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to update status",
+    };
+  }
+}
+
+// Delete project
+export async function deleteProject(
+  projectId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch(`/api/projects/${projectId}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || "Failed to delete project");
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to delete project:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to delete project",
+    };
+  }
 }

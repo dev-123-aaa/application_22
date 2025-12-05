@@ -2,6 +2,7 @@
 
 import { ReactNode, useState } from "react";
 import { VideoProvider } from "@/lib/contexts/VideoContext";
+import { ChannelProvider } from "@/components/channel/ChannelProvider";
 import { Header } from "@/components/layout/Header";
 import { NewVideoModal } from "@/components/modals/NewVideoModal";
 import { Toast } from "@/components/ui/toast";
@@ -25,18 +26,20 @@ export function AppProvider({ children }: AppProviderProps) {
   };
 
   return (
-    <VideoProvider>
-      <Header />
-      {children}
-      <NewVideoModal
-        onSuccess={(title) =>
-          showToast(`Production started for "${title}"`, "success")
-        }
-        onError={(message) => showToast(message, "error")}
-      />
-      {toast && (
-        <Toast message={toast.message} type={toast.type} onClose={hideToast} />
-      )}
-    </VideoProvider>
+    <ChannelProvider>
+      <VideoProvider>
+        <Header />
+        {children}
+        <NewVideoModal
+          onSuccess={(title) =>
+            showToast(`Production started for "${title}"`, "success")
+          }
+          onError={(message) => showToast(message, "error")}
+        />
+        {toast && (
+          <Toast message={toast.message} type={toast.type} onClose={hideToast} />
+        )}
+      </VideoProvider>
+    </ChannelProvider>
   );
 }
