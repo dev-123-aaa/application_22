@@ -34,6 +34,35 @@ async function migrate() {
     `;
     console.log("✓ Default webhook URL inserted");
 
+    // Create channels table
+    console.log("Creating channels table...");
+    await sql`
+      CREATE TABLE IF NOT EXISTS channels (
+        channel_id VARCHAR(255) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        slug VARCHAR(255) UNIQUE NOT NULL,
+        description TEXT,
+        color VARCHAR(7) DEFAULT '#00d4ff',
+        avatar_url TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `;
+    console.log("✓ Channels table created");
+
+    // Seed default channels
+    console.log("Seeding default channels...");
+    await sql`
+      INSERT INTO channels (channel_id, name, slug, color) VALUES
+        ('cartoonolgy', 'Cartoonolgy', 'cartoonolgy', '#FFD700'),
+        ('ricktopus', 'Ricktopus', 'ricktopus', '#FF6B00'),
+        ('red-umbrella', 'Red Umbrella', 'red-umbrella', '#E61919'),
+        ('hidden-hokage', 'Hidden Hokage', 'hidden-hokage', '#FF8C00'),
+        ('beyond-ultra', 'Beyond Ultra', 'beyond-ultra', '#9B59B6')
+      ON CONFLICT (channel_id) DO NOTHING
+    `;
+    console.log("✓ Default channels seeded");
+
     // Create projects table
     console.log("Creating projects table...");
     await sql`
@@ -51,11 +80,20 @@ async function migrate() {
         script TEXT,
         thumbnail_suggestions TEXT[],
         error TEXT,
+        channel_id VARCHAR(255) REFERENCES channels(channel_id),
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
       )
     `;
     console.log("✓ Projects table created");
+
+    // Add channel_id column to projects if it doesn't exist (for existing databases)
+    console.log("Ensuring channel_id column exists in projects...");
+    await sql`
+      ALTER TABLE projects
+      ADD COLUMN IF NOT EXISTS channel_id VARCHAR(255) REFERENCES channels(channel_id)
+    `;
+    console.log("✓ channel_id column ensured");
 
     // Create updated_at trigger function
     console.log("Creating updated_at trigger function...");
@@ -96,6 +134,19 @@ async function migrate() {
     `;
     console.log("✓ Settings trigger created");
 
+    // Create trigger for channels table
+    console.log("Creating trigger for channels table...");
+    await sql`
+      DROP TRIGGER IF EXISTS update_channels_updated_at ON channels
+    `;
+    await sql`
+      CREATE TRIGGER update_channels_updated_at
+        BEFORE UPDATE ON channels
+        FOR EACH ROW
+        EXECUTE FUNCTION update_updated_at_column()
+    `;
+    console.log("✓ Channels trigger created");
+
     console.log("\n✅ Migration completed successfully!");
 
     // Verify tables
@@ -104,7 +155,7 @@ async function migrate() {
       SELECT table_name
       FROM information_schema.tables
       WHERE table_schema = 'public'
-      AND table_name IN ('settings', 'projects')
+      AND table_name IN ('settings', 'projects', 'channels')
     `;
     console.log("Tables found:", tables.map((t) => t.table_name).join(", "));
 
@@ -113,6 +164,13 @@ async function migrate() {
     console.log("\nCurrent settings:");
     settings.forEach((s) => {
       console.log(`  ${s.key}: ${s.value}`);
+    });
+
+    // Show channels
+    const channels = await sql`SELECT channel_id, name, color FROM channels ORDER BY name`;
+    console.log("\nCurrent channels:");
+    channels.forEach((c) => {
+      console.log(`  ${c.name} (${c.channel_id}) - ${c.color}`);
     });
 
   } catch (error) {

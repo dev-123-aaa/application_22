@@ -4,20 +4,41 @@ import { v4 as uuidv4 } from "uuid";
 
 export const dynamic = "force-dynamic";
 
-// GET - Fetch all projects
-export async function GET() {
-  try {
-    const sql = getDb();
-    const projects = await sql`
-      SELECT * FROM projects ORDER BY created_at DESC
-    `;
+// Disable caching
+const headers = {
+  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+  "Pragma": "no-cache",
+};
 
-    return NextResponse.json({ projects });
+// GET - Fetch all projects (optionally filtered by channel_id)
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const channel_id = searchParams.get("channel_id");
+
+    const sql = getDb();
+
+    let projects;
+    if (channel_id) {
+      // Filter by channel_id
+      projects = await sql`
+        SELECT * FROM projects
+        WHERE channel_id = ${channel_id}
+        ORDER BY created_at DESC
+      `;
+    } else {
+      // Return all projects
+      projects = await sql`
+        SELECT * FROM projects ORDER BY created_at DESC
+      `;
+    }
+
+    return NextResponse.json({ projects }, { headers });
   } catch (error) {
     console.error("Failed to fetch projects:", error);
     return NextResponse.json(
       { error: "Failed to fetch projects" },
-      { status: 500 }
+      { status: 500, headers }
     );
   }
 }
@@ -26,33 +47,46 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { title, duration_hours, duration_minutes } = body;
+    const { title, duration_hours, duration_minutes, channel_id } = body;
 
     // Validate input
     if (!title || title.trim() === "") {
       return NextResponse.json(
         { error: "Title is required" },
-        { status: 400 }
+        { status: 400, headers }
       );
     }
 
     if (typeof duration_hours !== "number" || duration_hours < 0) {
       return NextResponse.json(
         { error: "Duration hours must be a non-negative number" },
-        { status: 400 }
+        { status: 400, headers }
       );
     }
 
     if (typeof duration_minutes !== "number" || duration_minutes < 0 || duration_minutes > 59) {
       return NextResponse.json(
         { error: "Duration minutes must be between 0 and 59" },
-        { status: 400 }
+        { status: 400, headers }
       );
+    }
+
+    // Validate channel_id if provided
+    const sql = getDb();
+    if (channel_id) {
+      const channelExists = await sql`
+        SELECT channel_id FROM channels WHERE channel_id = ${channel_id}
+      `;
+      if (channelExists.length === 0) {
+        return NextResponse.json(
+          { error: "Channel not found" },
+          { status: 400, headers }
+        );
+      }
     }
 
     const project_id = uuidv4();
 
-    const sql = getDb();
     const result = await sql`
       INSERT INTO projects (
         project_id,
@@ -60,6 +94,7 @@ export async function POST(request: Request) {
         status,
         duration_hours,
         duration_minutes,
+        channel_id,
         created_at,
         updated_at
       )
@@ -69,6 +104,7 @@ export async function POST(request: Request) {
         'Outline in progress',
         ${duration_hours},
         ${duration_minutes},
+        ${channel_id || null},
         NOW(),
         NOW()
       )
@@ -78,12 +114,12 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       project: result[0],
-    });
+    }, { headers });
   } catch (error) {
     console.error("Failed to create project:", error);
     return NextResponse.json(
       { error: "Failed to create project" },
-      { status: 500 }
+      { status: 500, headers }
     );
   }
 }
