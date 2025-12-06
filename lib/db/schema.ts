@@ -25,6 +25,9 @@ export type Project = {
   thumbnail_suggestions: string[] | null;
   error: string | null;
   channel_id: string | null;
+  script_approved: boolean;
+  video_status: string | null;
+  video_drive_folder: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -68,3 +71,14 @@ export const PROJECT_STATUSES = [
 ] as const;
 
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
+
+// Video generation status stages
+export const VIDEO_STATUSES = [
+  "Section Chunking",
+  "Rendering",
+  "Finalizing",
+  "Video Finished",
+  "Video Failed",
+] as const;
+
+export type VideoStatus = (typeof VIDEO_STATUSES)[number];

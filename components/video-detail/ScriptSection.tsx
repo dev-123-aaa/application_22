@@ -1,24 +1,34 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Check, FileText, ChevronDown, ChevronUp } from "lucide-react";
+import { Copy, Check, FileText, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { VideoStatus, hasScriptReady } from "@/lib/types";
+import { approveScript } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 interface ScriptSectionProps {
   script?: string;
   status: VideoStatus;
+  scriptApproved: boolean;
+  projectId: string;
   onCopySuccess: () => void;
+  onApprovalChange: (approved: boolean) => void;
+  onApprovalError: (error: string) => void;
 }
 
 export function ScriptSection({
   script,
   status,
+  scriptApproved,
+  projectId,
   onCopySuccess,
+  onApprovalChange,
+  onApprovalError,
 }: ScriptSectionProps) {
   const [copied, setCopied] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isUpdatingApproval, setIsUpdatingApproval] = useState(false);
   const isReady = hasScriptReady(status);
   const hasScript = script && script.length > 0;
 
@@ -33,6 +43,23 @@ export function ScriptSection({
     } catch (err) {
       console.error("Failed to copy script:", err);
     }
+  };
+
+  const handleApprovalChange = async () => {
+    if (isUpdatingApproval) return;
+
+    setIsUpdatingApproval(true);
+    const newApproved = !scriptApproved;
+
+    const result = await approveScript(projectId, newApproved);
+
+    if (result.success) {
+      onApprovalChange(newApproved);
+    } else {
+      onApprovalError(result.error || "Failed to update script approval");
+    }
+
+    setIsUpdatingApproval(false);
   };
 
   // Check if script is long enough to need collapsing
@@ -116,6 +143,51 @@ export function ScriptSection({
               )}
             </Button>
           )}
+
+          {/* Script Approval Checkbox */}
+          <div className="border-t border-zinc-800/50 pt-4 mt-4">
+            <label
+              className={cn(
+                "flex items-center gap-3 cursor-pointer select-none",
+                isUpdatingApproval && "opacity-50 cursor-not-allowed"
+              )}
+            >
+              <div className="relative">
+                <input
+                  type="checkbox"
+                  checked={scriptApproved}
+                  onChange={handleApprovalChange}
+                  disabled={isUpdatingApproval}
+                  className="sr-only"
+                />
+                <div
+                  className={cn(
+                    "h-5 w-5 rounded border-2 transition-colors flex items-center justify-center",
+                    scriptApproved
+                      ? "bg-emerald-500 border-emerald-500"
+                      : "bg-transparent border-zinc-600 hover:border-zinc-500"
+                  )}
+                >
+                  {isUpdatingApproval ? (
+                    <Loader2 className="h-3 w-3 animate-spin text-white" />
+                  ) : scriptApproved ? (
+                    <Check className="h-3 w-3 text-white" />
+                  ) : null}
+                </div>
+              </div>
+              <span
+                className={cn(
+                  "text-sm",
+                  scriptApproved ? "text-emerald-400" : "text-gray-400"
+                )}
+              >
+                Script approved and ready for video generation
+              </span>
+            </label>
+            <p className="text-xs text-gray-500 mt-2 ml-8">
+              Approve the script to enable video generation
+            </p>
+          </div>
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center rounded-md border border-dashed border-zinc-800 bg-zinc-950/30 py-12 text-center">

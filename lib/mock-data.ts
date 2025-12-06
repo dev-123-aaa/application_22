@@ -40,6 +40,9 @@ export const mockVideos: Video[] = [
       `${thumbnailBase}/0a0a0a/00d4ff?text=Squidward+Spotlight+3`,
       `${thumbnailBase}/1a1a1a/ffffff?text=Squidward+Spotlight+4`,
     ],
+    script_approved: true,
+    video_status: "Video Finished",
+    video_drive_folder: "https://drive.google.com/drive/folders/example1",
   },
   {
     project_id: "vid_002",
@@ -59,6 +62,9 @@ export const mockVideos: Video[] = [
       `${thumbnailBase}/1a1a1a/ff4444?text=Dark+Truth+2`,
       `${thumbnailBase}/0a0a0a/ffd700?text=Dark+Truth+3`,
     ],
+    script_approved: true,
+    video_status: "Rendering",
+    video_drive_folder: null,
   },
   {
     project_id: "vid_003",
@@ -79,6 +85,9 @@ export const mockVideos: Video[] = [
       `${thumbnailBase}/1a1a1a/22c55e?text=Krabby+Patty+3`,
       `${thumbnailBase}/1a1a1a/00d4ff?text=Krabby+Patty+4`,
     ],
+    script_approved: false,
+    video_status: null,
+    video_drive_folder: null,
   },
   {
     project_id: "vid_004",
@@ -92,6 +101,9 @@ export const mockVideos: Video[] = [
     primary_locations: "Patrick's Rock, Jellyfish Fields",
     central_theme: "Character deep dive",
     tone: "Comedic, analytical",
+    script_approved: false,
+    video_status: null,
+    video_drive_folder: null,
   },
   {
     project_id: "vid_005",
@@ -105,6 +117,9 @@ export const mockVideos: Video[] = [
     primary_locations: "Sandy's Treedome, Texas",
     central_theme: "Character backstory exploration",
     tone: "Emotional, nostalgic",
+    script_approved: false,
+    video_status: null,
+    video_drive_folder: null,
   },
   {
     project_id: "vid_006",
@@ -118,5 +133,8 @@ export const mockVideos: Video[] = [
     primary_locations: "Krusty Krab, Mr. Krabs' House",
     central_theme: "Social commentary analysis",
     tone: "Satirical, insightful",
+    script_approved: false,
+    video_status: null,
+    video_drive_folder: null,
   },
 ];

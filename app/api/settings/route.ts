@@ -13,7 +13,7 @@ const headers = {
 };
 
 // Allowed setting keys
-const ALLOWED_KEYS = ["webhook_url", "thumbnail_webhook_url"];
+const ALLOWED_KEYS = ["webhook_url", "webhook_script", "webhook_video", "webhook_thumbnail", "thumbnail_webhook_url"];
 
 // GET - Fetch current settings
 export async function GET() {
@@ -36,8 +36,11 @@ export async function GET() {
 
     // Build response object with all settings
     const responseData: Record<string, string | null> = {
-      webhook_url: null,
-      thumbnail_webhook_url: null,
+      webhook_url: null, // Legacy key, kept for backwards compatibility
+      webhook_script: null,
+      webhook_video: null,
+      webhook_thumbnail: null,
+      thumbnail_webhook_url: null, // Legacy key, kept for backwards compatibility
       updated_at: null,
     };
 
@@ -47,6 +50,14 @@ export async function GET() {
       if (!responseData.updated_at || new Date(setting.updated_at) > new Date(responseData.updated_at as string)) {
         responseData.updated_at = setting.updated_at;
       }
+    }
+
+    // Provide fallbacks from legacy keys to new keys for backwards compatibility
+    if (!responseData.webhook_script && responseData.webhook_url) {
+      responseData.webhook_script = responseData.webhook_url;
+    }
+    if (!responseData.webhook_thumbnail && responseData.thumbnail_webhook_url) {
+      responseData.webhook_thumbnail = responseData.thumbnail_webhook_url;
     }
 
     console.log("GET /api/settings - Returning:", JSON.stringify(responseData));

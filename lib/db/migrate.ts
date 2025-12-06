@@ -25,14 +25,45 @@ async function migrate() {
     `;
     console.log("✓ Settings table created");
 
-    // Insert default webhook URL
-    console.log("Inserting default webhook URL...");
+    // Migrate webhook settings
+    console.log("Setting up webhook settings...");
+
+    // Check if old webhook_url exists and migrate it
+    const existingWebhook = await sql`
+      SELECT value FROM settings WHERE key = 'webhook_url'
+    `;
+
+    if (existingWebhook.length > 0) {
+      // Migrate old webhook_url to webhook_script
+      await sql`
+        INSERT INTO settings (key, value)
+        VALUES ('webhook_script', ${existingWebhook[0].value})
+        ON CONFLICT (key) DO UPDATE SET value = ${existingWebhook[0].value}
+      `;
+      // Optionally remove the old key
+      await sql`DELETE FROM settings WHERE key = 'webhook_url'`;
+      console.log("✓ Migrated webhook_url to webhook_script");
+    } else {
+      // Insert default script webhook
+      await sql`
+        INSERT INTO settings (key, value)
+        VALUES ('webhook_script', '')
+        ON CONFLICT (key) DO NOTHING
+      `;
+    }
+
+    // Insert video and thumbnail webhook defaults
     await sql`
       INSERT INTO settings (key, value)
-      VALUES ('webhook_url', 'https://apkmap.app.n8n.cloud/webhook-test/961b7f38-73c4-4503-be2e-7333190dafa2')
+      VALUES ('webhook_video', '')
       ON CONFLICT (key) DO NOTHING
     `;
-    console.log("✓ Default webhook URL inserted");
+    await sql`
+      INSERT INTO settings (key, value)
+      VALUES ('webhook_thumbnail', '')
+      ON CONFLICT (key) DO NOTHING
+    `;
+    console.log("✓ Webhook settings configured");
 
     // Create channels table
     console.log("Creating channels table...");
@@ -81,6 +112,9 @@ async function migrate() {
         thumbnail_suggestions TEXT[],
         error TEXT,
         channel_id VARCHAR(255) REFERENCES channels(channel_id),
+        script_approved BOOLEAN DEFAULT FALSE,
+        video_status VARCHAR(255),
+        video_drive_folder TEXT,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
       )
@@ -94,6 +128,22 @@ async function migrate() {
       ADD COLUMN IF NOT EXISTS channel_id VARCHAR(255) REFERENCES channels(channel_id)
     `;
     console.log("✓ channel_id column ensured");
+
+    // Add video generation columns for existing databases
+    console.log("Ensuring video generation columns exist in projects...");
+    await sql`
+      ALTER TABLE projects
+      ADD COLUMN IF NOT EXISTS script_approved BOOLEAN DEFAULT FALSE
+    `;
+    await sql`
+      ALTER TABLE projects
+      ADD COLUMN IF NOT EXISTS video_status VARCHAR(255)
+    `;
+    await sql`
+      ALTER TABLE projects
+      ADD COLUMN IF NOT EXISTS video_drive_folder TEXT
+    `;
+    console.log("✓ Video generation columns ensured");
 
     // Create updated_at trigger function
     console.log("Creating updated_at trigger function...");

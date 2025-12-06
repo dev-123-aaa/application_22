@@ -31,7 +31,7 @@ export interface CreateProjectResponse {
   error?: string;
 }
 
-// Fetch webhook URL from settings
+// Fetch script webhook URL from settings
 export async function fetchWebhookUrl(): Promise<string | null> {
   try {
     const response = await fetch("/api/settings");
@@ -42,8 +42,10 @@ export async function fetchWebhookUrl(): Promise<string | null> {
       throw new Error("Failed to fetch webhook URL");
     }
     const data = await response.json();
-    cachedWebhookUrl = data.webhook_url;
-    return data.webhook_url;
+    // Use new key with fallback to legacy key
+    const url = data.webhook_script || data.webhook_url;
+    cachedWebhookUrl = url;
+    return url;
   } catch (error) {
     console.error("Failed to fetch webhook URL:", error);
     return null;
@@ -279,7 +281,8 @@ export async function fetchThumbnailWebhookUrl(): Promise<string | null> {
       return null;
     }
     const data = await response.json();
-    return data.thumbnail_webhook_url || null;
+    // Use new key with fallback to legacy key
+    return data.webhook_thumbnail || data.thumbnail_webhook_url || null;
   } catch (error) {
     console.error("Failed to fetch thumbnail webhook URL:", error);
     return null;
@@ -381,6 +384,63 @@ export async function deleteProject(
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to delete project",
+    };
+  }
+}
+
+// Approve or unapprove script
+export async function approveScript(
+  projectId: string,
+  approved: boolean
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch(`/api/projects/${projectId}/approve-script`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ approved }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || "Failed to update script approval");
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to update script approval:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to update script approval",
+    };
+  }
+}
+
+// Trigger video generation
+export async function triggerVideoGeneration(
+  projectId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch(`/api/projects/${projectId}/generate-video`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Failed to start video generation");
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to start video generation:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to start video generation",
     };
   }
 }

@@ -29,6 +29,9 @@ export type Video = {
   tone: string;
   script?: string;
   thumbnail_suggestions?: string[];
+  script_approved: boolean;
+  video_status: string | null;
+  video_drive_folder: string | null;
 };
 
 // Pipeline stages in order
