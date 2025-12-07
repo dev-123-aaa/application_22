@@ -298,8 +298,8 @@ export function VideoGenerationSection({
         </div>
       )}
 
-      {/* Drive Folder Link */}
-      {isComplete && videoDriveFolder && (
+      {/* Drive Folder Link - Show whenever folder URL exists */}
+      {videoDriveFolder && (
         <div className="mb-6">
           <a
             href={videoDriveFolder}

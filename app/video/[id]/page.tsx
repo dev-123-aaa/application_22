@@ -250,7 +250,7 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
         />
 
         {/* Pipeline Status Stepper */}
-        <PipelineStatus status={video.status} />
+        <PipelineStatus status={video.status} videoStatus={video.video_status} />
       </div>
 
       {/* Toast notification */}
