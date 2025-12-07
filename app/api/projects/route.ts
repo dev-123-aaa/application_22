@@ -47,7 +47,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { title, duration_hours, duration_minutes, channel_id } = body;
+    const { project_id: providedId, title, duration_hours, duration_minutes, channel_id } = body;
 
     // Validate input
     if (!title || title.trim() === "") {
@@ -71,8 +71,37 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate channel_id if provided
     const sql = getDb();
+
+    // Use provided project_id or generate new one
+    let project_id = providedId;
+
+    if (project_id) {
+      // Validate UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(project_id)) {
+        return NextResponse.json(
+          { error: "Invalid project_id format. Must be a valid UUID." },
+          { status: 400, headers }
+        );
+      }
+
+      // Check if project_id already exists
+      const existing = await sql`
+        SELECT project_id FROM projects WHERE project_id = ${project_id}
+      `;
+      if (existing.length > 0) {
+        return NextResponse.json(
+          { error: "Project with this ID already exists" },
+          { status: 409, headers }
+        );
+      }
+    } else {
+      // Generate new UUID
+      project_id = uuidv4();
+    }
+
+    // Validate channel_id if provided
     if (channel_id) {
       const channelExists = await sql`
         SELECT channel_id FROM channels WHERE channel_id = ${channel_id}
@@ -84,8 +113,6 @@ export async function POST(request: Request) {
         );
       }
     }
-
-    const project_id = uuidv4();
 
     const result = await sql`
       INSERT INTO projects (
