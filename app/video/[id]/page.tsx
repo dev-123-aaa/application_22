@@ -2,17 +2,18 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { ArrowLeft, Loader2, AlertCircle, RefreshCw, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { fetchProject, triggerThumbnailWebhook, updateProjectStatus } from "@/lib/api";
-import { Video, canTriggerThumbnail } from "@/lib/types";
+import { fetchProject } from "@/lib/api";
+import { Video } from "@/lib/types";
 import { Project } from "@/lib/db/schema";
 import { VideoHeader } from "@/components/video-detail/VideoHeader";
 import { OverviewCard } from "@/components/video-detail/OverviewCard";
 import { ScriptSection } from "@/components/video-detail/ScriptSection";
 import { VideoGenerationSection } from "@/components/video-detail/VideoGenerationSection";
-import { ThumbnailGrid } from "@/components/video-detail/ThumbnailGrid";
+import { ThumbnailSection } from "@/components/video-detail/ThumbnailSection";
 import { PipelineStatus } from "@/components/video-detail/PipelineStatus";
+import { SectionProgress } from "@/components/video-detail/SectionProgress";
 import { Toast } from "@/components/ui/toast";
 
 const POLL_INTERVAL = 10000; // 10 seconds
@@ -29,6 +30,7 @@ function projectToVideo(project: Project): Video {
     status: project.status as Video["status"],
     created_at: project.created_at,
     total_sections: project.total_sections || 0,
+    current_section: project.current_section || 0,
     duration_hours: project.duration_hours,
     duration_minutes: project.duration_minutes,
     main_characters: project.main_characters || "",
@@ -60,7 +62,6 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
     message: string;
     type: "success" | "error" | "info";
   } | null>(null);
-  const [isTriggeringThumbnail, setIsTriggeringThumbnail] = useState(false);
   const isInitialLoad = useRef(true);
 
   const loadProject = useCallback(async (showLoadingState = true) => {
@@ -112,39 +113,6 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
 
   const hideToast = () => {
     setToast(null);
-  };
-
-  const handleTriggerThumbnail = async () => {
-    if (!video) return;
-
-    setIsTriggeringThumbnail(true);
-
-    try {
-      // Trigger the thumbnail webhook
-      const webhookResult = await triggerThumbnailWebhook(video.project_id);
-
-      if (!webhookResult.success) {
-        showToast(webhookResult.error || "Failed to trigger thumbnail generation", "error");
-        setIsTriggeringThumbnail(false);
-        return;
-      }
-
-      // Update project status to "Thumbnail creation"
-      const statusResult = await updateProjectStatus(video.project_id, "Thumbnail creation");
-
-      if (!statusResult.success) {
-        showToast("Webhook triggered but failed to update status", "error");
-      } else {
-        showToast("Thumbnail generation started", "success");
-        // Reload the project to get updated status
-        loadProject(false);
-      }
-    } catch (err) {
-      console.error("Failed to trigger thumbnail:", err);
-      showToast("Failed to trigger thumbnail generation", "error");
-    }
-
-    setIsTriggeringThumbnail(false);
   };
 
   // Loading state
@@ -227,7 +195,17 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
         {/* Overview Card - Video metadata */}
         <OverviewCard video={video} />
 
-        {/* Script Section with copy functionality */}
+        {/* Section Progress (shown when in Sections in creation status) */}
+        {video.status === "Sections in creation" && video.total_sections > 0 && (
+          <div className="rounded-lg border border-zinc-800/50 bg-zinc-900/50 p-6">
+            <SectionProgress
+              currentSection={video.current_section}
+              totalSections={video.total_sections}
+            />
+          </div>
+        )}
+
+        {/* Script Section with copy and edit functionality */}
         <ScriptSection
           script={video.script}
           status={video.status}
@@ -239,6 +217,10 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
             showToast(approved ? "Script approved" : "Script approval removed");
           }}
           onApprovalError={(error) => showToast(error, "error")}
+          onScriptChange={(newScript) => {
+            setVideo({ ...video, script: newScript });
+          }}
+          onScriptSaveSuccess={() => showToast("Script saved successfully")}
         />
 
         {/* Video Generation Section */}
@@ -254,38 +236,18 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
           onError={(error) => showToast(error, "error")}
         />
 
-        {/* Thumbnail Section with Generate Button */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-light uppercase tracking-widest text-gray-400">
-              Thumbnails
-            </h3>
-            {canTriggerThumbnail(video.status) && (
-              <Button
-                onClick={handleTriggerThumbnail}
-                disabled={isTriggeringThumbnail}
-                className="gap-2"
-                size="sm"
-              >
-                {isTriggeringThumbnail ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <ImageIcon className="h-4 w-4" />
-                    Generate Thumbnail
-                  </>
-                )}
-              </Button>
-            )}
-          </div>
-          <ThumbnailGrid
-            thumbnails={video.thumbnail_suggestions}
-            status={video.status}
-          />
-        </div>
+        {/* Thumbnail Section */}
+        <ThumbnailSection
+          thumbnails={video.thumbnail_suggestions}
+          scriptApproved={video.script_approved}
+          projectId={video.project_id}
+          onGenerateStart={() => showToast("Generating thumbnails...", "info")}
+          onGenerateSuccess={() => {
+            showToast("Thumbnail generation started");
+            loadProject(false);
+          }}
+          onGenerateError={(error) => showToast(error, "error")}
+        />
 
         {/* Pipeline Status Stepper */}
         <PipelineStatus status={video.status} />

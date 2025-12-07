@@ -44,6 +44,7 @@ function projectToVideo(project: Project): Video {
     status: project.status as Video["status"],
     created_at: project.created_at,
     total_sections: project.total_sections || 0,
+    current_section: project.current_section || 0,
     duration_hours: project.duration_hours,
     duration_minutes: project.duration_minutes,
     main_characters: project.main_characters || "",

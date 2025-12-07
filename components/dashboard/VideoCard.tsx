@@ -125,41 +125,43 @@ export function VideoCard({ video }: VideoCardProps) {
         href={`/video/${video.project_id}`}
         className="block p-4"
       >
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex-1 min-w-0 pr-10">
+        <div className="flex items-center gap-4">
+          {/* Title - takes available space */}
+          <div className="flex-1 min-w-0">
             <h3 className="truncate text-sm font-normal text-white group-hover:text-cyan-50">
               {video.title}
             </h3>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 sm:flex-nowrap sm:gap-4">
+          {/* Status, Duration, Date, and Delete in a row */}
+          <div className="flex items-center gap-4 flex-shrink-0">
             <StatusBadge status={video.status} />
 
-            <div className="flex items-center gap-1.5 text-xs text-gray-500">
+            <div className="hidden sm:flex items-center gap-1.5 text-xs text-gray-500">
               <Clock className="h-3.5 w-3.5" />
               <span>{formatDuration(video.duration_hours, video.duration_minutes)}</span>
             </div>
 
-            <div className="flex items-center gap-1.5 text-xs text-gray-500">
+            <div className="hidden sm:flex items-center gap-1.5 text-xs text-gray-500 min-w-[90px]">
               <Calendar className="h-3.5 w-3.5" />
               <span>{formatDate(video.created_at)}</span>
             </div>
+
+            {/* Delete button - inline, always in the row */}
+            <button
+              onClick={handleDeleteClick}
+              className={cn(
+                "p-2 rounded-md flex-shrink-0",
+                "text-gray-500 hover:text-red-400 hover:bg-red-500/10",
+                "opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+              )}
+              title="Delete project"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
           </div>
         </div>
       </Link>
-
-      {/* Delete button */}
-      <button
-        onClick={handleDeleteClick}
-        className={cn(
-          "absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-md",
-          "text-gray-500 hover:text-red-400 hover:bg-red-500/10",
-          "opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-        )}
-        title="Delete project"
-      >
-        <Trash2 className="h-4 w-4" />
-      </button>
     </div>
   );
 }

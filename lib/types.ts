@@ -3,13 +3,12 @@ export type VideoStatus =
   | "Outline done"
   | "Sections in creation"
   | "Sections done"
-  | "Script Assembly in progress"
-  | "Script Assembly done"
+  | "Script Assembly"
+  | "Ready for Voiceover"
   | "Voiceover in progress"
   | "Voiceover done"
   | "Images generating"
-  | "Video Assembly in progress"
-  | "Video Assembly done"
+  | "Video assembly"
   | "Thumbnail creation"
   | "Upload pending"
   | "Published"
@@ -21,6 +20,7 @@ export type Video = {
   status: VideoStatus;
   created_at: string;
   total_sections: number;
+  current_section: number;
   duration_hours: number;
   duration_minutes: number;
   main_characters: string;
@@ -38,16 +38,29 @@ export type Video = {
 export const PIPELINE_STAGES = [
   "Outline",
   "Sections",
-  "Script Assembly",
+  "Script",
   "Voiceover",
   "Images",
-  "Video Assembly",
+  "Video",
   "Thumbnail",
   "Upload",
   "Published",
 ] as const;
 
 export type PipelineStage = (typeof PIPELINE_STAGES)[number];
+
+// Pipeline stage configuration with associated statuses
+export const PIPELINE_STAGE_CONFIG = [
+  { key: "outline", label: "Outline", statuses: ["Outline in progress", "Outline done"] },
+  { key: "sections", label: "Sections", statuses: ["Sections in creation", "Sections done"] },
+  { key: "script", label: "Script", statuses: ["Script Assembly", "Ready for Voiceover"] },
+  { key: "voiceover", label: "Voiceover", statuses: ["Voiceover in progress", "Voiceover done"] },
+  { key: "images", label: "Images", statuses: ["Images generating"] },
+  { key: "video", label: "Video", statuses: ["Video assembly"] },
+  { key: "thumbnail", label: "Thumbnail", statuses: ["Thumbnail creation"] },
+  { key: "upload", label: "Upload", statuses: ["Upload pending"] },
+  { key: "published", label: "Published", statuses: ["Published"] },
+] as const;
 
 // Map status to pipeline stage index
 export function getStageFromStatus(status: VideoStatus): number {
@@ -56,13 +69,12 @@ export function getStageFromStatus(status: VideoStatus): number {
     "Outline done": 0,
     "Sections in creation": 1,
     "Sections done": 1,
-    "Script Assembly in progress": 2,
-    "Script Assembly done": 2,
+    "Script Assembly": 2,
+    "Ready for Voiceover": 2,
     "Voiceover in progress": 3,
     "Voiceover done": 3,
     "Images generating": 4,
-    "Video Assembly in progress": 5,
-    "Video Assembly done": 5,
+    "Video assembly": 5,
     "Thumbnail creation": 6,
     "Upload pending": 7,
     "Published": 8,
@@ -80,9 +92,8 @@ export function isStageComplete(status: VideoStatus, stageIndex: number): boolea
   const doneStatuses: VideoStatus[] = [
     "Outline done",
     "Sections done",
-    "Script Assembly done",
+    "Ready for Voiceover",
     "Voiceover done",
-    "Video Assembly done",
     "Published",
   ];
 
@@ -95,12 +106,11 @@ export function isStageComplete(status: VideoStatus, stageIndex: number): boolea
 // Check if script should be available based on status
 export function hasScriptReady(status: VideoStatus): boolean {
   const postScriptStatuses: VideoStatus[] = [
-    "Script Assembly done",
+    "Ready for Voiceover",
     "Voiceover in progress",
     "Voiceover done",
     "Images generating",
-    "Video Assembly in progress",
-    "Video Assembly done",
+    "Video assembly",
     "Thumbnail creation",
     "Upload pending",
     "Published",
@@ -108,15 +118,14 @@ export function hasScriptReady(status: VideoStatus): boolean {
   return postScriptStatuses.includes(status);
 }
 
-// Check if thumbnail generation can be triggered (Script Assembly done or later)
+// Check if thumbnail generation can be triggered (Ready for Voiceover or later)
 export function canTriggerThumbnail(status: VideoStatus): boolean {
   const eligibleStatuses: VideoStatus[] = [
-    "Script Assembly done",
+    "Ready for Voiceover",
     "Voiceover in progress",
     "Voiceover done",
     "Images generating",
-    "Video Assembly in progress",
-    "Video Assembly done",
+    "Video assembly",
   ];
   return eligibleStatuses.includes(status);
 }

@@ -444,3 +444,60 @@ export async function triggerVideoGeneration(
     };
   }
 }
+
+// Update project script
+export async function updateProjectScript(
+  projectId: string,
+  script: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch(`/api/projects/${projectId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ script }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || "Failed to update script");
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to update script:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to update script",
+    };
+  }
+}
+
+// Trigger thumbnail generation
+export async function triggerThumbnailGeneration(
+  projectId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch(`/api/projects/${projectId}/generate-thumbnails`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Failed to start thumbnail generation");
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to start thumbnail generation:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to start thumbnail generation",
+    };
+  }
+}
