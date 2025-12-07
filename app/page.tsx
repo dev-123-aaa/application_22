@@ -28,6 +28,9 @@ function projectToVideo(project: Project): Video {
     tone: project.tone || "",
     script: project.script || undefined,
     thumbnail_suggestions: project.thumbnail_suggestions || undefined,
+    script_approved: project.script_approved || false,
+    video_status: project.video_status || null,
+    video_drive_folder: project.video_drive_folder || null,
   };
 }
 

@@ -1,6 +1,5 @@
 import { Settings } from "lucide-react";
 import { WebhookSettings } from "@/components/settings/WebhookSettings";
-import { ThumbnailWebhookSettings } from "@/components/settings/ThumbnailWebhookSettings";
 import { ChannelManagement } from "@/components/settings/ChannelManagement";
 
 export default function SettingsPage() {
@@ -23,7 +22,6 @@ export default function SettingsPage() {
       <div className="space-y-6">
         <ChannelManagement />
         <WebhookSettings />
-        <ThumbnailWebhookSettings />
       </div>
     </div>
   );

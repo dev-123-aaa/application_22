@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 interface StatusUpdateRequest {
   project_id: string;
-  status: string;
+  status?: string;
   script?: string;
   total_sections?: number;
   main_characters?: string | string[];
@@ -14,6 +14,9 @@ interface StatusUpdateRequest {
   tone?: string;
   thumbnail_suggestions?: string[];
   error?: string | null;
+  // Video generation fields
+  video_status?: string;
+  video_drive_folder?: string;
 }
 
 // POST - Update project status (called by n8n)
@@ -56,6 +59,8 @@ export async function POST(request: Request) {
       tone,
       thumbnail_suggestions,
       error,
+      video_status,
+      video_drive_folder,
     } = body;
 
     // Validate required fields
@@ -66,9 +71,13 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!status || typeof status !== "string" || status.trim() === "") {
+    // At least one of status or video_status must be provided
+    const hasStatus = status && typeof status === "string" && status.trim() !== "";
+    const hasVideoStatus = video_status && typeof video_status === "string" && video_status.trim() !== "";
+
+    if (!hasStatus && !hasVideoStatus) {
       return NextResponse.json(
-        { success: false, error: "status is required" },
+        { success: false, error: "status or video_status is required" },
         { status: 400 }
       );
     }
@@ -87,7 +96,7 @@ export async function POST(request: Request) {
     const result = await sql`
       UPDATE projects
       SET
-        status = ${status},
+        status = COALESCE(${status ?? null}, status),
         script = COALESCE(${script ?? null}, script),
         total_sections = COALESCE(${total_sections ?? null}, total_sections),
         main_characters = COALESCE(${mainCharsStr ?? null}, main_characters),
@@ -96,9 +105,11 @@ export async function POST(request: Request) {
         tone = COALESCE(${tone ?? null}, tone),
         thumbnail_suggestions = COALESCE(${thumbnail_suggestions ?? null}, thumbnail_suggestions),
         error = ${error ?? null},
+        video_status = COALESCE(${video_status ?? null}, video_status),
+        video_drive_folder = COALESCE(${video_drive_folder ?? null}, video_drive_folder),
         updated_at = NOW()
       WHERE project_id = ${project_id}
-      RETURNING project_id, status, updated_at
+      RETURNING project_id, status, video_status, video_drive_folder, updated_at
     `;
 
     if (result.length === 0) {
@@ -115,6 +126,8 @@ export async function POST(request: Request) {
       project: {
         project_id: result[0].project_id,
         status: result[0].status,
+        video_status: result[0].video_status,
+        video_drive_folder: result[0].video_drive_folder,
         updated_at: result[0].updated_at,
       },
     });

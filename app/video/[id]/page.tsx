@@ -10,6 +10,7 @@ import { Project } from "@/lib/db/schema";
 import { VideoHeader } from "@/components/video-detail/VideoHeader";
 import { OverviewCard } from "@/components/video-detail/OverviewCard";
 import { ScriptSection } from "@/components/video-detail/ScriptSection";
+import { VideoGenerationSection } from "@/components/video-detail/VideoGenerationSection";
 import { ThumbnailGrid } from "@/components/video-detail/ThumbnailGrid";
 import { PipelineStatus } from "@/components/video-detail/PipelineStatus";
 import { Toast } from "@/components/ui/toast";
@@ -36,12 +37,17 @@ function projectToVideo(project: Project): Video {
     tone: project.tone || "",
     script: project.script || undefined,
     thumbnail_suggestions: project.thumbnail_suggestions || undefined,
+    script_approved: project.script_approved || false,
+    video_status: project.video_status || null,
+    video_drive_folder: project.video_drive_folder || null,
   };
 }
 
 // Check if a project is in progress (not finished or failed)
-function isProjectInProgress(status: string): boolean {
-  return !["Published", "Failed"].includes(status);
+function isProjectInProgress(status: string, videoStatus: string | null): boolean {
+  const isScriptInProgress = !["Published", "Failed"].includes(status);
+  const isVideoInProgress = videoStatus && ["Section Chunking", "Rendering", "Finalizing"].includes(videoStatus);
+  return isScriptInProgress || !!isVideoInProgress;
 }
 
 export default function VideoDetailPage({ params }: VideoDetailPageProps) {
@@ -89,7 +95,7 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
 
   // Polling for updates when project is in progress
   useEffect(() => {
-    if (!video || !isProjectInProgress(video.status) || isLoading) {
+    if (!video || !isProjectInProgress(video.status, video.video_status) || isLoading) {
       return;
     }
 
@@ -225,7 +231,27 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
         <ScriptSection
           script={video.script}
           status={video.status}
+          scriptApproved={video.script_approved}
+          projectId={video.project_id}
           onCopySuccess={() => showToast("Script copied to clipboard")}
+          onApprovalChange={(approved) => {
+            setVideo({ ...video, script_approved: approved });
+            showToast(approved ? "Script approved" : "Script approval removed");
+          }}
+          onApprovalError={(error) => showToast(error, "error")}
+        />
+
+        {/* Video Generation Section */}
+        <VideoGenerationSection
+          projectId={video.project_id}
+          scriptApproved={video.script_approved}
+          videoStatus={video.video_status}
+          videoDriveFolder={video.video_drive_folder}
+          onGenerationStart={() => {
+            setVideo({ ...video, video_status: "Section Chunking" });
+          }}
+          onSuccess={() => showToast("Video generation started")}
+          onError={(error) => showToast(error, "error")}
         />
 
         {/* Thumbnail Section with Generate Button */}
