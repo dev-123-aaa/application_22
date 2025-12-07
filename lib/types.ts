@@ -41,7 +41,8 @@ export const PIPELINE_STAGES = [
   "Script",
   "Voiceover",
   "Images",
-  "Video",
+  "Video Assembly",
+  "Video Generation",
   "Thumbnail",
   "Upload",
   "Published",
@@ -56,7 +57,8 @@ export const PIPELINE_STAGE_CONFIG = [
   { key: "script", label: "Script", statuses: ["Script Assembly", "Ready for Voiceover"] },
   { key: "voiceover", label: "Voiceover", statuses: ["Voiceover in progress", "Voiceover done"] },
   { key: "images", label: "Images", statuses: ["Images generating"] },
-  { key: "video", label: "Video", statuses: ["Video assembly"] },
+  { key: "video-assembly", label: "Video Assembly", statuses: ["Video assembly"] },
+  { key: "video-generation", label: "Video Generation", statuses: ["Section Chunking", "Rendering", "Finalizing", "Video Finished"] },
   { key: "thumbnail", label: "Thumbnail", statuses: ["Thumbnail creation"] },
   { key: "upload", label: "Upload", statuses: ["Upload pending"] },
   { key: "published", label: "Published", statuses: ["Published"] },
@@ -75,9 +77,10 @@ export function getStageFromStatus(status: VideoStatus): number {
     "Voiceover done": 3,
     "Images generating": 4,
     "Video assembly": 5,
-    "Thumbnail creation": 6,
-    "Upload pending": 7,
-    "Published": 8,
+    // Video Generation (index 6) is handled separately via video_status
+    "Thumbnail creation": 7,
+    "Upload pending": 8,
+    "Published": 9,
     "Failed": -1,
   };
   return statusToStage[status];
