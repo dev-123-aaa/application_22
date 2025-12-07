@@ -8,6 +8,7 @@ interface StatusUpdateRequest {
   status?: string;
   script?: string;
   total_sections?: number;
+  current_section?: number;
   main_characters?: string | string[];
   primary_locations?: string | string[];
   central_theme?: string;
@@ -53,6 +54,7 @@ export async function POST(request: Request) {
       status,
       script,
       total_sections,
+      current_section,
       main_characters,
       primary_locations,
       central_theme,
@@ -99,6 +101,7 @@ export async function POST(request: Request) {
         status = COALESCE(${status ?? null}, status),
         script = COALESCE(${script ?? null}, script),
         total_sections = COALESCE(${total_sections ?? null}, total_sections),
+        current_section = COALESCE(${current_section ?? null}, current_section),
         main_characters = COALESCE(${mainCharsStr ?? null}, main_characters),
         primary_locations = COALESCE(${locationsStr ?? null}, primary_locations),
         central_theme = COALESCE(${central_theme ?? null}, central_theme),
@@ -109,7 +112,7 @@ export async function POST(request: Request) {
         video_drive_folder = COALESCE(${video_drive_folder ?? null}, video_drive_folder),
         updated_at = NOW()
       WHERE project_id = ${project_id}
-      RETURNING project_id, status, video_status, video_drive_folder, updated_at
+      RETURNING project_id, status, current_section, total_sections, video_status, video_drive_folder, updated_at
     `;
 
     if (result.length === 0) {
@@ -126,6 +129,8 @@ export async function POST(request: Request) {
       project: {
         project_id: result[0].project_id,
         status: result[0].status,
+        current_section: result[0].current_section,
+        total_sections: result[0].total_sections,
         video_status: result[0].video_status,
         video_drive_folder: result[0].video_drive_folder,
         updated_at: result[0].updated_at,

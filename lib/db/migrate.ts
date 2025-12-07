@@ -145,6 +145,14 @@ async function migrate() {
     `;
     console.log("✓ Video generation columns ensured");
 
+    // Add current_section column for tracking section progress
+    console.log("Ensuring current_section column exists in projects...");
+    await sql`
+      ALTER TABLE projects
+      ADD COLUMN IF NOT EXISTS current_section INTEGER DEFAULT 0
+    `;
+    console.log("✓ current_section column ensured");
+
     // Create updated_at trigger function
     console.log("Creating updated_at trigger function...");
     await sql`

@@ -17,6 +17,7 @@ export type Project = {
   duration_hours: number;
   duration_minutes: number;
   total_sections: number | null;
+  current_section: number;
   main_characters: string | null;
   primary_locations: string | null;
   central_theme: string | null;

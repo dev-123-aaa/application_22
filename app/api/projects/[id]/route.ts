@@ -130,3 +130,50 @@ export async function PATCH(
     );
   }
 }
+
+// PUT - Update project fields (script, etc.)
+export async function PUT(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { id } = params;
+    const body = await request.json();
+    const { script } = body;
+
+    console.log("PUT /api/projects/[id] - Updating project:", id);
+
+    const sql = getDb();
+
+    // Check if project exists first
+    const existing = await sql`
+      SELECT project_id FROM projects WHERE project_id = ${id}
+    `;
+
+    if (existing.length === 0) {
+      return NextResponse.json(
+        { error: "Project not found" },
+        { status: 404, headers }
+      );
+    }
+
+    // Update the project with the provided fields
+    const result = await sql`
+      UPDATE projects
+      SET
+        script = COALESCE(${script ?? null}, script),
+        updated_at = NOW()
+      WHERE project_id = ${id}
+      RETURNING *
+    `;
+
+    console.log("PUT /api/projects/[id] - Project updated:", id);
+    return NextResponse.json({ success: true, project: result[0] }, { headers });
+  } catch (error) {
+    console.error("Failed to update project:", error);
+    return NextResponse.json(
+      { error: "Failed to update project" },
+      { status: 500, headers }
+    );
+  }
+}
