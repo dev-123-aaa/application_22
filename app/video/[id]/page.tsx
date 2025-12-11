@@ -222,6 +222,10 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
             }
           }}
           onStatusError={(error) => showToast(error, "error")}
+          onUrlChange={(url) => {
+            setVideo({ ...video, script_url: url });
+            showToast("Script URL saved");
+          }}
         />
 
         {/* Video Generation Section */}
