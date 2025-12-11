@@ -4,6 +4,22 @@ import { getDb } from "@/lib/db";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+// Validate Google Docs URL format
+function isValidGoogleDocsUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    // Must be from docs.google.com domain
+    if (parsed.hostname !== "docs.google.com") {
+      return false;
+    }
+    // Must be a document path: /document/d/[ID]/...
+    const pathMatch = parsed.pathname.match(/^\/document\/d\/[a-zA-Z0-9_-]+/);
+    return pathMatch !== null;
+  } catch {
+    return false;
+  }
+}
+
 // Disable caching
 const headers = {
   "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
@@ -142,6 +158,14 @@ export async function PUT(
     const { script_url } = body;
 
     console.log("PUT /api/projects/[id] - Updating project:", id);
+
+    // Validate Google Docs URL format if script_url is provided
+    if (script_url && script_url.trim() !== "" && !isValidGoogleDocsUrl(script_url)) {
+      return NextResponse.json(
+        { error: "script_url must be a valid Google Docs URL (https://docs.google.com/document/d/...)" },
+        { status: 400, headers }
+      );
+    }
 
     const sql = getDb();
 

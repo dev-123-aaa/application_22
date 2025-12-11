@@ -29,12 +29,33 @@ export async function POST(
 
     const sql = getDb();
 
+    // If setting to "approved", verify script_url exists
+    if (status === "approved") {
+      const project = await sql`
+        SELECT script_url FROM projects WHERE project_id = ${id}
+      `;
+
+      if (project.length === 0) {
+        return NextResponse.json(
+          { error: "Project not found" },
+          { status: 404, headers }
+        );
+      }
+
+      if (!project[0].script_url || project[0].script_url.trim() === "") {
+        return NextResponse.json(
+          { error: "Cannot approve script: No script URL has been set. Please wait for the script to be generated." },
+          { status: 400, headers }
+        );
+      }
+    }
+
     // Update the script_status field
     const result = await sql`
       UPDATE projects
       SET script_status = ${status}
       WHERE project_id = ${id}
-      RETURNING project_id, script_status
+      RETURNING project_id, script_status, script_url
     `;
 
     if (result.length === 0) {

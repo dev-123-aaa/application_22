@@ -3,6 +3,22 @@ import { getDb } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
+// Validate Google Docs URL format
+function isValidGoogleDocsUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    // Must be from docs.google.com domain
+    if (parsed.hostname !== "docs.google.com") {
+      return false;
+    }
+    // Must be a document path: /document/d/[ID]/...
+    const pathMatch = parsed.pathname.match(/^\/document\/d\/[a-zA-Z0-9_-]+/);
+    return pathMatch !== null;
+  } catch {
+    return false;
+  }
+}
+
 interface StatusUpdateRequest {
   project_id: string;
   status?: string;
@@ -75,13 +91,27 @@ export async function POST(request: Request) {
       );
     }
 
-    // At least one of status or video_status must be provided
+    // At least one update field must be provided
     const hasStatus = status && typeof status === "string" && status.trim() !== "";
     const hasVideoStatus = video_status && typeof video_status === "string" && video_status.trim() !== "";
+    const hasScriptUrl = script_url && typeof script_url === "string" && script_url.trim() !== "";
+    const hasScriptStatus = script_status && ["pending", "draft", "approved"].includes(script_status);
+    const hasOtherFields = total_sections !== undefined || current_section !== undefined ||
+      main_characters !== undefined || primary_locations !== undefined ||
+      central_theme !== undefined || tone !== undefined ||
+      thumbnail_suggestions !== undefined || video_drive_folder !== undefined;
 
-    if (!hasStatus && !hasVideoStatus) {
+    if (!hasStatus && !hasVideoStatus && !hasScriptUrl && !hasScriptStatus && !hasOtherFields) {
       return NextResponse.json(
-        { success: false, error: "status or video_status is required" },
+        { success: false, error: "At least one update field is required" },
+        { status: 400 }
+      );
+    }
+
+    // Validate Google Docs URL format if script_url is provided
+    if (hasScriptUrl && !isValidGoogleDocsUrl(script_url)) {
+      return NextResponse.json(
+        { success: false, error: "script_url must be a valid Google Docs URL (https://docs.google.com/document/d/...)" },
         { status: 400 }
       );
     }
