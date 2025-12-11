@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
+import { cache, CacheKeys, CacheTTL } from "@/lib/cache";
 
 export const dynamic = "force-dynamic";
 
@@ -10,11 +11,38 @@ const headers = {
   "Pragma": "no-cache",
 };
 
+// Status values that indicate a project is in progress
+const IN_PROGRESS_STATUSES = [
+  "Outline in progress",
+  "Sections in creation",
+  "Images generating",
+  "Voiceover in progress",
+];
+
 // GET - Fetch all projects (optionally filtered by channel_id)
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const channel_id = searchParams.get("channel_id");
+    const skipCache = searchParams.get("fresh") === "true";
+
+    const cacheKey = CacheKeys.projects(channel_id || undefined);
+
+    // Check cache first (unless fresh data requested)
+    if (!skipCache) {
+      const cached = cache.get<{ projects: Array<{ status?: string; video_status?: string }> }>(cacheKey);
+      if (cached) {
+        // Check if any project is in progress - if so, skip cache for real-time updates
+        const hasInProgress = cached.projects.some(
+          (p) =>
+            IN_PROGRESS_STATUSES.includes(p.status || "") ||
+            ["Section Chunking", "Rendering", "Finalizing"].includes(p.video_status || "")
+        );
+        if (!hasInProgress) {
+          return NextResponse.json(cached, { headers });
+        }
+      }
+    }
 
     const sql = getDb();
 
@@ -33,7 +61,12 @@ export async function GET(request: Request) {
       `;
     }
 
-    return NextResponse.json({ projects }, { headers });
+    const response = { projects };
+
+    // Cache the result
+    cache.set(cacheKey, response, CacheTTL.PROJECTS_LIST);
+
+    return NextResponse.json(response, { headers });
   } catch (error) {
     console.error("Failed to fetch projects:", error);
     return NextResponse.json(
@@ -137,6 +170,9 @@ export async function POST(request: Request) {
       )
       RETURNING *
     `;
+
+    // Invalidate projects list cache
+    cache.invalidate("projects:");
 
     return NextResponse.json({
       success: true,

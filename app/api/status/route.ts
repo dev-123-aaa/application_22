@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
+import { cache, CacheKeys } from "@/lib/cache";
 
 export const dynamic = "force-dynamic";
 
@@ -155,6 +156,10 @@ export async function POST(request: Request) {
         { status: 404 }
       );
     }
+
+    // Invalidate caches for this project
+    cache.delete(CacheKeys.project(project_id));
+    cache.invalidate("projects:");
 
     console.log("POST /api/status - Updated:", result[0]);
     return NextResponse.json({

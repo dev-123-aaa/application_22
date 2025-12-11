@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
+import { cache, CacheKeys, CacheTTL, shouldCacheProject } from "@/lib/cache";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -33,7 +34,21 @@ export async function GET(
 ) {
   try {
     const { id } = params;
+    const { searchParams } = new URL(request.url);
+    const skipCache = searchParams.get("fresh") === "true";
+
     console.log("GET /api/projects/[id] - Fetching project:", id);
+
+    const cacheKey = CacheKeys.project(id);
+
+    // Check cache first (unless fresh data requested)
+    if (!skipCache) {
+      const cached = cache.get<{ project: { status: string; video_status: string | null } }>(cacheKey);
+      if (cached && shouldCacheProject(cached.project.status, cached.project.video_status)) {
+        console.log("GET /api/projects/[id] - Cache hit:", id);
+        return NextResponse.json(cached, { headers });
+      }
+    }
 
     const sql = getDb();
     const projects = await sql`
@@ -47,8 +62,15 @@ export async function GET(
       );
     }
 
+    const response = { project: projects[0] };
+
+    // Only cache if project is not in progress
+    if (shouldCacheProject(projects[0].status, projects[0].video_status)) {
+      cache.set(cacheKey, response, CacheTTL.PROJECT_SINGLE);
+    }
+
     console.log("GET /api/projects/[id] - Found:", projects[0].status);
-    return NextResponse.json({ project: projects[0] }, { headers });
+    return NextResponse.json(response, { headers });
   } catch (error) {
     console.error("Failed to fetch project:", error);
     return NextResponse.json(
@@ -83,6 +105,10 @@ export async function DELETE(
 
     // Delete the project
     await sql`DELETE FROM projects WHERE project_id = ${id}`;
+
+    // Invalidate caches
+    cache.delete(CacheKeys.project(id));
+    cache.invalidate("projects:");
 
     console.log("DELETE /api/projects/[id] - Project deleted:", id);
     return NextResponse.json({ success: true }, { headers });
@@ -135,6 +161,10 @@ export async function PATCH(
       WHERE project_id = ${id}
       RETURNING *
     `;
+
+    // Invalidate caches
+    cache.delete(CacheKeys.project(id));
+    cache.invalidate("projects:");
 
     console.log("PATCH /api/projects/[id] - Project updated:", id);
     return NextResponse.json({ success: true, project: result[0] }, { headers });
@@ -190,6 +220,10 @@ export async function PUT(
       WHERE project_id = ${id}
       RETURNING *
     `;
+
+    // Invalidate caches
+    cache.delete(CacheKeys.project(id));
+    cache.invalidate("projects:");
 
     console.log("PUT /api/projects/[id] - Project updated:", id);
     return NextResponse.json({ success: true, project: result[0] }, { headers });

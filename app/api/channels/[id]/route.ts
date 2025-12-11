@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { isValidHexColor } from "@/lib/db/schema";
+import { cache, CacheKeys } from "@/lib/cache";
 
 export const dynamic = "force-dynamic";
 
@@ -129,6 +130,9 @@ export async function PUT(
       RETURNING *
     `;
 
+    // Invalidate channels cache
+    cache.delete(CacheKeys.channels());
+
     return NextResponse.json({
       success: true,
       channel: result[0],
@@ -178,6 +182,9 @@ export async function DELETE(
 
     // Delete channel
     await sql`DELETE FROM channels WHERE channel_id = ${id}`;
+
+    // Invalidate channels cache
+    cache.delete(CacheKeys.channels());
 
     return NextResponse.json({ success: true }, { headers });
   } catch (error) {
