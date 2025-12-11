@@ -131,7 +131,7 @@ export async function PATCH(
   }
 }
 
-// PUT - Update project fields (script, etc.)
+// PUT - Update project fields (script_url, etc.)
 export async function PUT(
   request: Request,
   { params }: { params: { id: string } }
@@ -139,7 +139,7 @@ export async function PUT(
   try {
     const { id } = params;
     const body = await request.json();
-    const { script } = body;
+    const { script_url } = body;
 
     console.log("PUT /api/projects/[id] - Updating project:", id);
 
@@ -161,7 +161,7 @@ export async function PUT(
     const result = await sql`
       UPDATE projects
       SET
-        script = COALESCE(${script ?? null}, script),
+        script_url = COALESCE(${script_url ?? null}, script_url),
         updated_at = NOW()
       WHERE project_id = ${id}
       RETURNING *

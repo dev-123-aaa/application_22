@@ -6,10 +6,11 @@ import { ImageIcon, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { triggerThumbnailGeneration } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { ScriptStatus } from "@/lib/types";
 
 interface ThumbnailSectionProps {
   thumbnails?: string[];
-  scriptApproved: boolean;
+  scriptStatus: ScriptStatus;
   projectId: string;
   onGenerateStart?: () => void;
   onGenerateSuccess?: () => void;
@@ -18,12 +19,13 @@ interface ThumbnailSectionProps {
 
 export function ThumbnailSection({
   thumbnails,
-  scriptApproved,
+  scriptStatus,
   projectId,
   onGenerateStart,
   onGenerateSuccess,
   onGenerateError,
 }: ThumbnailSectionProps) {
+  const isScriptApproved = scriptStatus === "approved";
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
@@ -64,10 +66,10 @@ export function ThumbnailSection({
           variant="ghost"
           size="sm"
           onClick={handleGenerate}
-          disabled={!scriptApproved || isGenerating}
+          disabled={!isScriptApproved || isGenerating}
           className={cn(
             "gap-2",
-            scriptApproved && !isGenerating && "text-cyan-400 hover:text-cyan-300"
+            isScriptApproved && !isGenerating && "text-cyan-400 hover:text-cyan-300"
           )}
         >
           {isGenerating ? (
@@ -89,7 +91,7 @@ export function ThumbnailSection({
         </Button>
       </div>
 
-      {!scriptApproved && !hasThumbnails && (
+      {!isScriptApproved && !hasThumbnails && (
         <p className="text-xs text-gray-500 mb-4">
           Approve the script to enable thumbnail generation
         </p>
@@ -143,7 +145,7 @@ export function ThumbnailSection({
             No thumbnails generated yet
           </p>
           <p className="mt-1 text-xs text-gray-600">
-            {scriptApproved
+            {isScriptApproved
               ? "Click 'Generate Thumbnails' to create thumbnail suggestions"
               : "Approve the script first to generate thumbnails"}
           </p>

@@ -6,7 +6,8 @@ export const dynamic = "force-dynamic";
 interface StatusUpdateRequest {
   project_id: string;
   status?: string;
-  script?: string;
+  script_url?: string;
+  script_status?: "pending" | "draft" | "approved";
   total_sections?: number;
   current_section?: number;
   main_characters?: string | string[];
@@ -52,7 +53,8 @@ export async function POST(request: Request) {
     const {
       project_id,
       status,
-      script,
+      script_url,
+      script_status,
       total_sections,
       current_section,
       main_characters,
@@ -99,7 +101,8 @@ export async function POST(request: Request) {
       UPDATE projects
       SET
         status = COALESCE(${status ?? null}, status),
-        script = COALESCE(${script ?? null}, script),
+        script_url = COALESCE(${script_url ?? null}, script_url),
+        script_status = COALESCE(${script_status ?? null}, script_status),
         total_sections = COALESCE(${total_sections ?? null}, total_sections),
         current_section = COALESCE(${current_section ?? null}, current_section),
         main_characters = COALESCE(${mainCharsStr ?? null}, main_characters),
@@ -112,7 +115,7 @@ export async function POST(request: Request) {
         video_drive_folder = COALESCE(${video_drive_folder ?? null}, video_drive_folder),
         updated_at = NOW()
       WHERE project_id = ${project_id}
-      RETURNING project_id, status, current_section, total_sections, video_status, video_drive_folder, updated_at
+      RETURNING project_id, status, script_status, current_section, total_sections, video_status, video_drive_folder, updated_at
     `;
 
     if (result.length === 0) {
@@ -129,6 +132,7 @@ export async function POST(request: Request) {
       project: {
         project_id: result[0].project_id,
         status: result[0].status,
+        script_status: result[0].script_status,
         current_section: result[0].current_section,
         total_sections: result[0].total_sections,
         video_status: result[0].video_status,

@@ -1,130 +1,67 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Check, FileText, ChevronDown, ChevronUp, Loader2, Pencil, X, Save } from "lucide-react";
+import { FileText, ExternalLink, Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { VideoStatus } from "@/lib/types";
-import { approveScript, updateProjectScript } from "@/lib/api";
+import { VideoStatus, ScriptStatus } from "@/lib/types";
+import { updateScriptStatus } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 interface ScriptSectionProps {
-  script?: string;
+  scriptUrl?: string;
   status: VideoStatus;
-  scriptApproved: boolean;
+  scriptStatus: ScriptStatus;
   projectId: string;
-  onCopySuccess: () => void;
-  onApprovalChange: (approved: boolean) => void;
-  onApprovalError: (error: string) => void;
-  onScriptChange?: (script: string) => void;
-  onScriptSaveSuccess?: () => void;
+  onStatusChange: (status: ScriptStatus) => void;
+  onStatusError: (error: string) => void;
 }
 
-// Determine script status based on project status
-const getScriptStatus = (status: string) => {
-  const finishedStatuses = [
-    "Ready for Voiceover",
-    "Voiceover in progress",
-    "Voiceover done",
-    "Images generating",
-    "Video assembly",
-    "Video Assembly in progress",
-    "Video Assembly done",
-    "Thumbnail creation",
-    "Upload pending",
-    "Published",
-  ];
-
-  if (finishedStatuses.includes(status)) {
-    return { label: "Finished", color: "green" };
+// Determine script status label and color
+const getScriptStatusDisplay = (scriptStatus: ScriptStatus) => {
+  switch (scriptStatus) {
+    case "approved":
+      return { label: "Approved", color: "green" };
+    case "draft":
+      return { label: "Draft", color: "yellow" };
+    case "pending":
+    default:
+      return { label: "Pending", color: "gray" };
   }
-  return { label: "Pending", color: "yellow" };
 };
 
 export function ScriptSection({
-  script,
+  scriptUrl,
   status,
-  scriptApproved,
+  scriptStatus,
   projectId,
-  onCopySuccess,
-  onApprovalChange,
-  onApprovalError,
-  onScriptChange,
-  onScriptSaveSuccess,
+  onStatusChange,
+  onStatusError,
 }: ScriptSectionProps) {
-  const [copied, setCopied] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [isUpdatingApproval, setIsUpdatingApproval] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [editedScript, setEditedScript] = useState(script || "");
-  const [isSaving, setIsSaving] = useState(false);
-  const hasScript = script && script.length > 0;
-  const scriptStatus = getScriptStatus(status);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const hasScriptUrl = scriptUrl && scriptUrl.length > 0;
+  const statusDisplay = getScriptStatusDisplay(scriptStatus);
+  const isApproved = scriptStatus === "approved";
 
-  const handleCopy = async () => {
-    if (!script) return;
+  const handleStatusChange = async (newStatus: ScriptStatus) => {
+    if (isUpdatingStatus) return;
 
-    try {
-      await navigator.clipboard.writeText(script);
-      setCopied(true);
-      onCopySuccess();
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy script:", err);
-    }
-  };
+    setIsUpdatingStatus(true);
 
-  const handleApprovalChange = async () => {
-    if (isUpdatingApproval) return;
-
-    setIsUpdatingApproval(true);
-    const newApproved = !scriptApproved;
-
-    const result = await approveScript(projectId, newApproved);
+    const result = await updateScriptStatus(projectId, newStatus);
 
     if (result.success) {
-      onApprovalChange(newApproved);
+      onStatusChange(newStatus);
     } else {
-      onApprovalError(result.error || "Failed to update script approval");
+      onStatusError(result.error || "Failed to update script status");
     }
 
-    setIsUpdatingApproval(false);
+    setIsUpdatingStatus(false);
   };
 
-  const handleEditClick = () => {
-    setEditedScript(script || "");
-    setIsEditMode(true);
+  const handleApprovalToggle = () => {
+    const newStatus = isApproved ? "draft" : "approved";
+    handleStatusChange(newStatus);
   };
-
-  const handleCancelEdit = () => {
-    setEditedScript(script || "");
-    setIsEditMode(false);
-  };
-
-  const handleSaveScript = async () => {
-    if (isSaving) return;
-
-    setIsSaving(true);
-    const result = await updateProjectScript(projectId, editedScript);
-
-    if (result.success) {
-      if (onScriptChange) {
-        onScriptChange(editedScript);
-      }
-      if (onScriptSaveSuccess) {
-        onScriptSaveSuccess();
-      }
-      setIsEditMode(false);
-    } else {
-      onApprovalError(result.error || "Failed to save script");
-    }
-
-    setIsSaving(false);
-  };
-
-  // Check if script is long enough to need collapsing
-  const isLongScript = hasScript && script.length > 1000;
-  const displayScript =
-    isLongScript && !isExpanded ? script.slice(0, 1000) + "..." : script;
 
   return (
     <div className="rounded-lg border border-zinc-800/50 bg-zinc-900/50 p-6">
@@ -137,179 +74,90 @@ export function ScriptSection({
             <span className="inline-flex items-center rounded-full bg-red-500/10 border border-red-500/30 px-2 py-0.5 text-xs text-red-400">
               Failed
             </span>
-          ) : scriptStatus.color === "green" ? (
+          ) : statusDisplay.color === "green" ? (
             <span className="inline-flex items-center rounded-full bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 text-xs text-emerald-400">
-              {scriptStatus.label}
+              {statusDisplay.label}
+            </span>
+          ) : statusDisplay.color === "yellow" ? (
+            <span className="inline-flex items-center rounded-full bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 text-xs text-amber-400">
+              {statusDisplay.label}
             </span>
           ) : (
-            <span className="inline-flex items-center rounded-full bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 text-xs text-amber-400">
-              {scriptStatus.label}
+            <span className="inline-flex items-center rounded-full bg-zinc-500/10 border border-zinc-500/30 px-2 py-0.5 text-xs text-zinc-400">
+              {statusDisplay.label}
             </span>
           )}
         </div>
-
-        {hasScript && !isEditMode && (
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleCopy}
-              className="gap-2"
-            >
-              {copied ? (
-                <>
-                  <Check className="h-4 w-4 text-emerald-400" />
-                  <span className="text-emerald-400">Copied</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="h-4 w-4" />
-                  <span className="hidden sm:inline">Copy</span>
-                </>
-              )}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleEditClick}
-              className="gap-2"
-            >
-              <Pencil className="h-4 w-4" />
-              <span className="hidden sm:inline">Edit</span>
-            </Button>
-          </div>
-        )}
       </div>
 
-      {hasScript || isEditMode ? (
+      {hasScriptUrl ? (
         <div className="space-y-4">
-          {isEditMode ? (
-            /* Edit Mode */
-            <div className="space-y-4">
-              <textarea
-                value={editedScript}
-                onChange={(e) => setEditedScript(e.target.value)}
-                className="w-full min-h-[300px] rounded-md bg-zinc-950/50 p-4 text-sm leading-relaxed text-gray-300 border border-zinc-700 focus:border-cyan-500 focus:outline-none resize-y"
-                placeholder="Enter script content..."
-              />
-              <div className="flex justify-end gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleCancelEdit}
-                  disabled={isSaving}
-                  className="gap-2"
-                >
-                  <X className="h-4 w-4" />
-                  Cancel
-                </Button>
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={handleSaveScript}
-                  disabled={isSaving}
-                  className="gap-2 bg-cyan-600 hover:bg-cyan-700"
-                >
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4" />
-                      Save Script
-                    </>
-                  )}
-                </Button>
+          {/* Google Doc Link */}
+          <div className="rounded-md bg-zinc-950/50 p-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-full bg-blue-500/10 p-2">
+                <FileText className="h-5 w-5 text-blue-400" />
               </div>
-            </div>
-          ) : (
-            /* View Mode */
-            <>
-              <div
-                className={cn(
-                  "relative overflow-hidden rounded-md bg-zinc-950/50 p-4",
-                  !isExpanded && isLongScript && "max-h-64"
-                )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-white">Google Doc Script</p>
+                <p className="text-xs text-gray-500 truncate">{scriptUrl}</p>
+              </div>
+              <a
+                href={scriptUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
               >
-                <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-gray-300">
-                  {displayScript}
-                </pre>
-                {!isExpanded && isLongScript && (
-                  <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-zinc-950/90 to-transparent" />
-                )}
-              </div>
+                <ExternalLink className="h-4 w-4" />
+                Open Script
+              </a>
+            </div>
+          </div>
 
-              {isLongScript && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsExpanded(!isExpanded)}
-                  className="w-full gap-2"
-                >
-                  {isExpanded ? (
-                    <>
-                      <ChevronUp className="h-4 w-4" />
-                      Show Less
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown className="h-4 w-4" />
-                      Show Full Script
-                    </>
-                  )}
-                </Button>
+          {/* Script Approval Checkbox */}
+          <div className="border-t border-zinc-800/50 pt-4 mt-4">
+            <label
+              className={cn(
+                "flex items-center gap-3 cursor-pointer select-none",
+                isUpdatingStatus && "opacity-50 cursor-not-allowed"
               )}
-            </>
-          )}
-
-          {/* Script Approval Checkbox - always show when script exists */}
-          {!isEditMode && (
-            <div className="border-t border-zinc-800/50 pt-4 mt-4">
-              <label
-                className={cn(
-                  "flex items-center gap-3 cursor-pointer select-none",
-                  isUpdatingApproval && "opacity-50 cursor-not-allowed"
-                )}
-              >
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    checked={scriptApproved}
-                    onChange={handleApprovalChange}
-                    disabled={isUpdatingApproval}
-                    className="sr-only"
-                  />
-                  <div
-                    className={cn(
-                      "h-5 w-5 rounded border-2 transition-colors flex items-center justify-center",
-                      scriptApproved
-                        ? "bg-emerald-500 border-emerald-500"
-                        : "bg-transparent border-zinc-600 hover:border-zinc-500"
-                    )}
-                  >
-                    {isUpdatingApproval ? (
-                      <Loader2 className="h-3 w-3 animate-spin text-white" />
-                    ) : scriptApproved ? (
-                      <Check className="h-3 w-3 text-white" />
-                    ) : null}
-                  </div>
-                </div>
-                <span
+            >
+              <div className="relative">
+                <input
+                  type="checkbox"
+                  checked={isApproved}
+                  onChange={handleApprovalToggle}
+                  disabled={isUpdatingStatus}
+                  className="sr-only"
+                />
+                <div
                   className={cn(
-                    "text-sm",
-                    scriptApproved ? "text-emerald-400" : "text-gray-400"
+                    "h-5 w-5 rounded border-2 transition-colors flex items-center justify-center",
+                    isApproved
+                      ? "bg-emerald-500 border-emerald-500"
+                      : "bg-transparent border-zinc-600 hover:border-zinc-500"
                   )}
                 >
-                  Script approved and ready for video generation
-                </span>
-              </label>
-              <p className="text-xs text-gray-500 mt-2 ml-8">
-                Approve the script to enable video generation
-              </p>
-            </div>
-          )}
+                  {isUpdatingStatus ? (
+                    <Loader2 className="h-3 w-3 animate-spin text-white" />
+                  ) : isApproved ? (
+                    <Check className="h-3 w-3 text-white" />
+                  ) : null}
+                </div>
+              </div>
+              <span
+                className={cn(
+                  "text-sm",
+                  isApproved ? "text-emerald-400" : "text-gray-400"
+                )}
+              >
+                Script approved and ready for video generation
+              </span>
+            </label>
+            <p className="text-xs text-gray-500 mt-2 ml-8">
+              Review the script in Google Docs and approve to enable video generation
+            </p>
+          </div>
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center rounded-md border border-dashed border-zinc-800 bg-zinc-950/30 py-12 text-center">
@@ -319,7 +167,7 @@ export function ScriptSection({
           <p className="text-sm text-gray-500">
             {status === "Failed"
               ? "Script generation failed"
-              : "Script will appear here once generated"}
+              : "Script link will appear here once generated"}
           </p>
           <p className="mt-1 text-xs text-gray-600">
             Current status: {status}

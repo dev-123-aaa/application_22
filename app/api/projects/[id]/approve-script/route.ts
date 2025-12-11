@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
+import { SCRIPT_STATUSES, ScriptStatus } from "@/lib/db/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -8,7 +9,7 @@ const headers = {
   "Pragma": "no-cache",
 };
 
-// POST - Toggle script approval
+// POST - Update script status
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -16,23 +17,24 @@ export async function POST(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { approved } = body;
+    const { status } = body;
 
-    if (typeof approved !== "boolean") {
+    // Validate status is a valid script status
+    if (!status || !SCRIPT_STATUSES.includes(status as ScriptStatus)) {
       return NextResponse.json(
-        { error: "approved must be a boolean" },
+        { error: `status must be one of: ${SCRIPT_STATUSES.join(", ")}` },
         { status: 400, headers }
       );
     }
 
     const sql = getDb();
 
-    // Update the script_approved field
+    // Update the script_status field
     const result = await sql`
       UPDATE projects
-      SET script_approved = ${approved}
+      SET script_status = ${status}
       WHERE project_id = ${id}
-      RETURNING project_id, script_approved
+      RETURNING project_id, script_status
     `;
 
     if (result.length === 0) {
@@ -47,9 +49,9 @@ export async function POST(
       project: result[0],
     }, { headers });
   } catch (error) {
-    console.error("Failed to update script approval:", error);
+    console.error("Failed to update script status:", error);
     return NextResponse.json(
-      { error: "Failed to update script approval" },
+      { error: "Failed to update script status" },
       { status: 500, headers }
     );
   }

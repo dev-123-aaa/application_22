@@ -14,6 +14,9 @@ export type VideoStatus =
   | "Published"
   | "Failed";
 
+// Script status values
+export type ScriptStatus = "pending" | "draft" | "approved";
+
 export type Video = {
   project_id: string;
   title: string;
@@ -27,9 +30,9 @@ export type Video = {
   primary_locations: string;
   central_theme: string;
   tone: string;
-  script?: string;
+  script_url?: string;
+  script_status: ScriptStatus;
   thumbnail_suggestions?: string[];
-  script_approved: boolean;
   video_status: string | null;
   video_drive_folder: string | null;
 };

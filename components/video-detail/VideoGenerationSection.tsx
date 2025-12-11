@@ -13,10 +13,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { triggerVideoGeneration } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { ScriptStatus } from "@/lib/types";
 
 interface VideoGenerationSectionProps {
   projectId: string;
-  scriptApproved: boolean;
+  scriptStatus: ScriptStatus;
   videoStatus: string | null;
   videoDriveFolder: string | null;
   onGenerationStart: () => void;
@@ -89,13 +90,14 @@ function StageIndicator({
 
 export function VideoGenerationSection({
   projectId,
-  scriptApproved,
+  scriptStatus,
   videoStatus,
   videoDriveFolder,
   onGenerationStart,
   onSuccess,
   onError,
 }: VideoGenerationSectionProps) {
+  const isScriptApproved = scriptStatus === "approved";
   const [isGenerating, setIsGenerating] = useState(false);
 
   const isInProgress =
@@ -170,7 +172,7 @@ export function VideoGenerationSection({
     }
 
     return {
-      disabled: !scriptApproved,
+      disabled: !isScriptApproved,
       children: (
         <>
           <Video className="mr-2 h-4 w-4" />
@@ -207,7 +209,7 @@ export function VideoGenerationSection({
 
       {/* Status Message */}
       <div className="mb-6">
-        {!scriptApproved && !videoStatus && (
+        {!isScriptApproved && !videoStatus && (
           <div className="flex items-start gap-3 rounded-md bg-amber-500/10 border border-amber-500/30 p-4">
             <AlertTriangle className="h-5 w-5 text-amber-400 flex-shrink-0 mt-0.5" />
             <div>
@@ -221,7 +223,7 @@ export function VideoGenerationSection({
           </div>
         )}
 
-        {scriptApproved && !videoStatus && (
+        {isScriptApproved && !videoStatus && (
           <div className="flex items-start gap-3 rounded-md bg-emerald-500/10 border border-emerald-500/30 p-4">
             <Check className="h-5 w-5 text-emerald-400 flex-shrink-0 mt-0.5" />
             <div>
