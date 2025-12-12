@@ -37,9 +37,9 @@ function projectToVideo(project: Project): Video {
     primary_locations: project.primary_locations || "",
     central_theme: project.central_theme || "",
     tone: project.tone || "",
-    script: project.script || undefined,
+    script_url: project.script_url || undefined,
+    script_status: project.script_status || "pending",
     thumbnail_suggestions: project.thumbnail_suggestions || undefined,
-    script_approved: project.script_approved || false,
     video_status: project.video_status || null,
     video_drive_folder: project.video_drive_folder || null,
   };
@@ -205,28 +205,33 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
           </div>
         )}
 
-        {/* Script Section with copy and edit functionality */}
+        {/* Script Section with Google Doc link */}
         <ScriptSection
-          script={video.script}
+          scriptUrl={video.script_url}
           status={video.status}
-          scriptApproved={video.script_approved}
+          scriptStatus={video.script_status}
           projectId={video.project_id}
-          onCopySuccess={() => showToast("Script copied to clipboard")}
-          onApprovalChange={(approved) => {
-            setVideo({ ...video, script_approved: approved });
-            showToast(approved ? "Script approved" : "Script approval removed");
+          onStatusChange={(newStatus) => {
+            setVideo({ ...video, script_status: newStatus });
+            if (newStatus === "approved") {
+              showToast("Script approved");
+            } else if (newStatus === "draft") {
+              showToast("Script marked as draft");
+            } else {
+              showToast("Script status updated");
+            }
           }}
-          onApprovalError={(error) => showToast(error, "error")}
-          onScriptChange={(newScript) => {
-            setVideo({ ...video, script: newScript });
+          onStatusError={(error) => showToast(error, "error")}
+          onUrlChange={(url) => {
+            setVideo({ ...video, script_url: url });
+            showToast("Script URL saved");
           }}
-          onScriptSaveSuccess={() => showToast("Script saved successfully")}
         />
 
         {/* Video Generation Section */}
         <VideoGenerationSection
           projectId={video.project_id}
-          scriptApproved={video.script_approved}
+          scriptStatus={video.script_status}
           videoStatus={video.video_status}
           videoDriveFolder={video.video_drive_folder}
           onGenerationStart={() => {
@@ -239,7 +244,7 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
         {/* Thumbnail Section */}
         <ThumbnailSection
           thumbnails={video.thumbnail_suggestions}
-          scriptApproved={video.script_approved}
+          scriptStatus={video.script_status}
           projectId={video.project_id}
           onGenerateStart={() => showToast("Generating thumbnails...", "info")}
           onGenerateSuccess={() => {

@@ -1,4 +1,4 @@
-import { Project } from "@/lib/db/schema";
+import { Project, ScriptStatus } from "@/lib/db/schema";
 
 // Cache for webhook URL (refreshed on modal open)
 let cachedWebhookUrl: string | null = null;
@@ -388,10 +388,10 @@ export async function deleteProject(
   }
 }
 
-// Approve or unapprove script
-export async function approveScript(
+// Update script status (pending, draft, approved)
+export async function updateScriptStatus(
   projectId: string,
-  approved: boolean
+  status: ScriptStatus
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const response = await fetch(`/api/projects/${projectId}/approve-script`, {
@@ -399,20 +399,20 @@ export async function approveScript(
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ approved }),
+      body: JSON.stringify({ status }),
     });
 
     if (!response.ok) {
       const data = await response.json();
-      throw new Error(data.error || "Failed to update script approval");
+      throw new Error(data.error || "Failed to update script status");
     }
 
     return { success: true };
   } catch (error) {
-    console.error("Failed to update script approval:", error);
+    console.error("Failed to update script status:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to update script approval",
+      error: error instanceof Error ? error.message : "Failed to update script status",
     };
   }
 }
@@ -445,10 +445,10 @@ export async function triggerVideoGeneration(
   }
 }
 
-// Update project script
-export async function updateProjectScript(
+// Update project script URL
+export async function updateScriptUrl(
   projectId: string,
-  script: string
+  scriptUrl: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const response = await fetch(`/api/projects/${projectId}`, {
@@ -456,20 +456,20 @@ export async function updateProjectScript(
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ script }),
+      body: JSON.stringify({ script_url: scriptUrl }),
     });
 
     if (!response.ok) {
       const data = await response.json();
-      throw new Error(data.error || "Failed to update script");
+      throw new Error(data.error || "Failed to update script URL");
     }
 
     return { success: true };
   } catch (error) {
-    console.error("Failed to update script:", error);
+    console.error("Failed to update script URL:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to update script",
+      error: error instanceof Error ? error.message : "Failed to update script URL",
     };
   }
 }

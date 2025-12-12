@@ -33,17 +33,17 @@ export async function POST(
     const project = projects[0];
 
     // Check if script is approved
-    if (!project.script_approved) {
+    if (project.script_status !== "approved") {
       return NextResponse.json(
         { success: false, error: "Script must be approved before generating thumbnails" },
         { status: 400, headers }
       );
     }
 
-    // Check if script exists
-    if (!project.script) {
+    // Check if script URL exists
+    if (!project.script_url) {
       return NextResponse.json(
-        { success: false, error: "No script available to generate thumbnails from" },
+        { success: false, error: "No script URL available to generate thumbnails from" },
         { status: 400, headers }
       );
     }
@@ -81,7 +81,7 @@ export async function POST(
       channel_id: channelId,
       channel_name: channelName,
       title: project.title,
-      script: project.script,
+      script_url: project.script_url,
     };
 
     // Trigger the webhook

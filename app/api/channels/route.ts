@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { generateSlug, isValidHexColor } from "@/lib/db/schema";
+import { cache, CacheKeys, CacheTTL } from "@/lib/cache";
 
 export const dynamic = "force-dynamic";
 
@@ -11,8 +12,21 @@ const headers = {
 };
 
 // GET - Fetch all channels with project counts
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const skipCache = searchParams.get("fresh") === "true";
+
+    const cacheKey = CacheKeys.channels();
+
+    // Check cache first (unless fresh data requested)
+    if (!skipCache) {
+      const cached = cache.get<{ channels: unknown[] }>(cacheKey);
+      if (cached) {
+        return NextResponse.json(cached, { headers });
+      }
+    }
+
     const sql = getDb();
     const channels = await sql`
       SELECT c.*,
@@ -23,7 +37,12 @@ export async function GET() {
       ORDER BY c.name ASC
     `;
 
-    return NextResponse.json({ channels }, { headers });
+    const response = { channels };
+
+    // Cache the result (5 minutes)
+    cache.set(cacheKey, response, CacheTTL.CHANNELS);
+
+    return NextResponse.json(response, { headers });
   } catch (error) {
     console.error("Failed to fetch channels:", error);
     return NextResponse.json(
@@ -122,6 +141,9 @@ export async function POST(request: Request) {
       )
       RETURNING *
     `;
+
+    // Invalidate channels cache
+    cache.delete(CacheKeys.channels());
 
     return NextResponse.json({
       success: true,

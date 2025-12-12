@@ -1,12 +1,30 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
+import { cache, CacheKeys } from "@/lib/cache";
 
 export const dynamic = "force-dynamic";
+
+// Validate Google Docs URL format
+function isValidGoogleDocsUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    // Must be from docs.google.com domain
+    if (parsed.hostname !== "docs.google.com") {
+      return false;
+    }
+    // Must be a document path: /document/d/[ID]/...
+    const pathMatch = parsed.pathname.match(/^\/document\/d\/[a-zA-Z0-9_-]+/);
+    return pathMatch !== null;
+  } catch {
+    return false;
+  }
+}
 
 interface StatusUpdateRequest {
   project_id: string;
   status?: string;
-  script?: string;
+  script_url?: string;
+  script_status?: "pending" | "draft" | "approved";
   total_sections?: number;
   current_section?: number;
   main_characters?: string | string[];
@@ -52,7 +70,8 @@ export async function POST(request: Request) {
     const {
       project_id,
       status,
-      script,
+      script_url,
+      script_status,
       total_sections,
       current_section,
       main_characters,
@@ -73,13 +92,27 @@ export async function POST(request: Request) {
       );
     }
 
-    // At least one of status or video_status must be provided
+    // At least one update field must be provided
     const hasStatus = status && typeof status === "string" && status.trim() !== "";
     const hasVideoStatus = video_status && typeof video_status === "string" && video_status.trim() !== "";
+    const hasScriptUrl = script_url && typeof script_url === "string" && script_url.trim() !== "";
+    const hasScriptStatus = script_status && ["pending", "draft", "approved"].includes(script_status);
+    const hasOtherFields = total_sections !== undefined || current_section !== undefined ||
+      main_characters !== undefined || primary_locations !== undefined ||
+      central_theme !== undefined || tone !== undefined ||
+      thumbnail_suggestions !== undefined || video_drive_folder !== undefined;
 
-    if (!hasStatus && !hasVideoStatus) {
+    if (!hasStatus && !hasVideoStatus && !hasScriptUrl && !hasScriptStatus && !hasOtherFields) {
       return NextResponse.json(
-        { success: false, error: "status or video_status is required" },
+        { success: false, error: "At least one update field is required" },
+        { status: 400 }
+      );
+    }
+
+    // Validate Google Docs URL format if script_url is provided
+    if (hasScriptUrl && !isValidGoogleDocsUrl(script_url)) {
+      return NextResponse.json(
+        { success: false, error: "script_url must be a valid Google Docs URL (https://docs.google.com/document/d/...)" },
         { status: 400 }
       );
     }
@@ -99,7 +132,8 @@ export async function POST(request: Request) {
       UPDATE projects
       SET
         status = COALESCE(${status ?? null}, status),
-        script = COALESCE(${script ?? null}, script),
+        script_url = COALESCE(${script_url ?? null}, script_url),
+        script_status = COALESCE(${script_status ?? null}, script_status),
         total_sections = COALESCE(${total_sections ?? null}, total_sections),
         current_section = COALESCE(${current_section ?? null}, current_section),
         main_characters = COALESCE(${mainCharsStr ?? null}, main_characters),
@@ -112,7 +146,7 @@ export async function POST(request: Request) {
         video_drive_folder = COALESCE(${video_drive_folder ?? null}, video_drive_folder),
         updated_at = NOW()
       WHERE project_id = ${project_id}
-      RETURNING project_id, status, current_section, total_sections, video_status, video_drive_folder, updated_at
+      RETURNING project_id, status, script_status, current_section, total_sections, video_status, video_drive_folder, updated_at
     `;
 
     if (result.length === 0) {
@@ -123,12 +157,17 @@ export async function POST(request: Request) {
       );
     }
 
+    // Invalidate caches for this project
+    cache.delete(CacheKeys.project(project_id));
+    cache.invalidate("projects:");
+
     console.log("POST /api/status - Updated:", result[0]);
     return NextResponse.json({
       success: true,
       project: {
         project_id: result[0].project_id,
         status: result[0].status,
+        script_status: result[0].script_status,
         current_section: result[0].current_section,
         total_sections: result[0].total_sections,
         video_status: result[0].video_status,

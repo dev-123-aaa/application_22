@@ -1,8 +1,25 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
+import { cache, CacheKeys, CacheTTL, shouldCacheProject } from "@/lib/cache";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+// Validate Google Docs URL format
+function isValidGoogleDocsUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    // Must be from docs.google.com domain
+    if (parsed.hostname !== "docs.google.com") {
+      return false;
+    }
+    // Must be a document path: /document/d/[ID]/...
+    const pathMatch = parsed.pathname.match(/^\/document\/d\/[a-zA-Z0-9_-]+/);
+    return pathMatch !== null;
+  } catch {
+    return false;
+  }
+}
 
 // Disable caching
 const headers = {
@@ -17,7 +34,21 @@ export async function GET(
 ) {
   try {
     const { id } = params;
+    const { searchParams } = new URL(request.url);
+    const skipCache = searchParams.get("fresh") === "true";
+
     console.log("GET /api/projects/[id] - Fetching project:", id);
+
+    const cacheKey = CacheKeys.project(id);
+
+    // Check cache first (unless fresh data requested)
+    if (!skipCache) {
+      const cached = cache.get<{ project: { status: string; video_status: string | null } }>(cacheKey);
+      if (cached && shouldCacheProject(cached.project.status, cached.project.video_status)) {
+        console.log("GET /api/projects/[id] - Cache hit:", id);
+        return NextResponse.json(cached, { headers });
+      }
+    }
 
     const sql = getDb();
     const projects = await sql`
@@ -31,8 +62,15 @@ export async function GET(
       );
     }
 
+    const response = { project: projects[0] };
+
+    // Only cache if project is not in progress
+    if (shouldCacheProject(projects[0].status, projects[0].video_status)) {
+      cache.set(cacheKey, response, CacheTTL.PROJECT_SINGLE);
+    }
+
     console.log("GET /api/projects/[id] - Found:", projects[0].status);
-    return NextResponse.json({ project: projects[0] }, { headers });
+    return NextResponse.json(response, { headers });
   } catch (error) {
     console.error("Failed to fetch project:", error);
     return NextResponse.json(
@@ -67,6 +105,10 @@ export async function DELETE(
 
     // Delete the project
     await sql`DELETE FROM projects WHERE project_id = ${id}`;
+
+    // Invalidate caches
+    cache.delete(CacheKeys.project(id));
+    cache.invalidate("projects:");
 
     console.log("DELETE /api/projects/[id] - Project deleted:", id);
     return NextResponse.json({ success: true }, { headers });
@@ -120,6 +162,10 @@ export async function PATCH(
       RETURNING *
     `;
 
+    // Invalidate caches
+    cache.delete(CacheKeys.project(id));
+    cache.invalidate("projects:");
+
     console.log("PATCH /api/projects/[id] - Project updated:", id);
     return NextResponse.json({ success: true, project: result[0] }, { headers });
   } catch (error) {
@@ -131,7 +177,7 @@ export async function PATCH(
   }
 }
 
-// PUT - Update project fields (script, etc.)
+// PUT - Update project fields (script_url, etc.)
 export async function PUT(
   request: Request,
   { params }: { params: { id: string } }
@@ -139,9 +185,17 @@ export async function PUT(
   try {
     const { id } = params;
     const body = await request.json();
-    const { script } = body;
+    const { script_url } = body;
 
     console.log("PUT /api/projects/[id] - Updating project:", id);
+
+    // Validate Google Docs URL format if script_url is provided
+    if (script_url && script_url.trim() !== "" && !isValidGoogleDocsUrl(script_url)) {
+      return NextResponse.json(
+        { error: "script_url must be a valid Google Docs URL (https://docs.google.com/document/d/...)" },
+        { status: 400, headers }
+      );
+    }
 
     const sql = getDb();
 
@@ -161,11 +215,15 @@ export async function PUT(
     const result = await sql`
       UPDATE projects
       SET
-        script = COALESCE(${script ?? null}, script),
+        script_url = COALESCE(${script_url ?? null}, script_url),
         updated_at = NOW()
       WHERE project_id = ${id}
       RETURNING *
     `;
+
+    // Invalidate caches
+    cache.delete(CacheKeys.project(id));
+    cache.invalidate("projects:");
 
     console.log("PUT /api/projects/[id] - Project updated:", id);
     return NextResponse.json({ success: true, project: result[0] }, { headers });

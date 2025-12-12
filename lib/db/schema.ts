@@ -10,6 +10,10 @@ export type Channel = {
   project_count?: number; // Only included in list queries
 };
 
+// Script status values
+export const SCRIPT_STATUSES = ["pending", "draft", "approved"] as const;
+export type ScriptStatus = (typeof SCRIPT_STATUSES)[number];
+
 export type Project = {
   project_id: string;
   title: string;
@@ -22,11 +26,11 @@ export type Project = {
   primary_locations: string | null;
   central_theme: string | null;
   tone: string | null;
-  script: string | null;
+  script_url: string | null;
+  script_status: ScriptStatus;
   thumbnail_suggestions: string[] | null;
   error: string | null;
   channel_id: string | null;
-  script_approved: boolean;
   video_status: string | null;
   video_drive_folder: string | null;
   created_at: string;

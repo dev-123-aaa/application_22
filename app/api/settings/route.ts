@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
+import { cache, CacheKeys, CacheTTL } from "@/lib/cache";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -16,10 +17,24 @@ const headers = {
 const ALLOWED_KEYS = ["webhook_url", "webhook_script", "webhook_video", "webhook_thumbnail", "thumbnail_webhook_url"];
 
 // GET - Fetch current settings
-export async function GET() {
+export async function GET(request: Request) {
   console.log("GET /api/settings - Handler called at:", new Date().toISOString());
 
   try {
+    const { searchParams } = new URL(request.url);
+    const skipCache = searchParams.get("fresh") === "true";
+
+    const cacheKey = CacheKeys.settings();
+
+    // Check cache first (unless fresh data requested)
+    if (!skipCache) {
+      const cached = cache.get<Record<string, string | null>>(cacheKey);
+      if (cached) {
+        console.log("GET /api/settings - Cache hit");
+        return NextResponse.json(cached, { headers });
+      }
+    }
+
     const sql = getDb();
     console.log("GET /api/settings - Database connection created");
 
@@ -59,6 +74,9 @@ export async function GET() {
     if (!responseData.webhook_thumbnail && responseData.thumbnail_webhook_url) {
       responseData.webhook_thumbnail = responseData.thumbnail_webhook_url;
     }
+
+    // Cache the result (5 minutes)
+    cache.set(cacheKey, responseData, CacheTTL.SETTINGS);
 
     console.log("GET /api/settings - Returning:", JSON.stringify(responseData));
     return NextResponse.json(responseData, { headers });
@@ -130,6 +148,9 @@ export async function PUT(request: Request) {
         { status: 500, headers }
       );
     }
+
+    // Invalidate settings cache
+    cache.delete(CacheKeys.settings());
 
     const response = {
       success: true,

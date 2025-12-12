@@ -35,17 +35,17 @@ export async function POST(
     const project = projects[0];
 
     // Validate script is approved
-    if (!project.script_approved) {
+    if (project.script_status !== "approved") {
       return NextResponse.json(
         { error: "Script must be approved before generating video" },
         { status: 400, headers }
       );
     }
 
-    // Validate script exists
-    if (!project.script || project.script.trim() === "") {
+    // Validate script URL exists
+    if (!project.script_url || project.script_url.trim() === "") {
       return NextResponse.json(
-        { error: "Script is empty" },
+        { error: "Script URL is not set" },
         { status: 400, headers }
       );
     }
@@ -86,7 +86,7 @@ export async function POST(
       channel_id: project.channel_id || null,
       channel_name: project.channel_name || null,
       title: project.title,
-      script: project.script,
+      script_url: project.script_url,
     };
 
     // Trigger the webhook

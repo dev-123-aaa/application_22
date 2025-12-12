@@ -108,11 +108,11 @@ async function migrate() {
         primary_locations TEXT,
         central_theme TEXT,
         tone TEXT,
-        script TEXT,
+        script_url TEXT,
+        script_status VARCHAR(20) DEFAULT 'pending',
         thumbnail_suggestions TEXT[],
         error TEXT,
         channel_id VARCHAR(255) REFERENCES channels(channel_id),
-        script_approved BOOLEAN DEFAULT FALSE,
         video_status VARCHAR(255),
         video_drive_folder TEXT,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -133,10 +133,6 @@ async function migrate() {
     console.log("Ensuring video generation columns exist in projects...");
     await sql`
       ALTER TABLE projects
-      ADD COLUMN IF NOT EXISTS script_approved BOOLEAN DEFAULT FALSE
-    `;
-    await sql`
-      ALTER TABLE projects
       ADD COLUMN IF NOT EXISTS video_status VARCHAR(255)
     `;
     await sql`
@@ -152,6 +148,49 @@ async function migrate() {
       ADD COLUMN IF NOT EXISTS current_section INTEGER DEFAULT 0
     `;
     console.log("✓ current_section column ensured");
+
+    // Migration: Convert script/script_approved to script_url/script_status
+    console.log("Migrating to script_url/script_status schema...");
+
+    // Add new columns if they don't exist
+    await sql`
+      ALTER TABLE projects
+      ADD COLUMN IF NOT EXISTS script_url TEXT
+    `;
+    await sql`
+      ALTER TABLE projects
+      ADD COLUMN IF NOT EXISTS script_status VARCHAR(20) DEFAULT 'pending'
+    `;
+    console.log("✓ Added script_url and script_status columns");
+
+    // Migrate existing script_approved data to script_status
+    // If script_approved was true, set status to 'approved', otherwise 'pending'
+    await sql`
+      UPDATE projects
+      SET script_status = CASE
+        WHEN script_approved = true THEN 'approved'
+        ELSE 'pending'
+      END
+      WHERE script_approved IS NOT NULL
+        AND (script_status IS NULL OR script_status = 'pending')
+    `;
+    console.log("✓ Migrated script_approved to script_status");
+
+    // Drop old columns (script and script_approved)
+    // Note: We use separate try-catch for each DROP to handle if columns don't exist
+    try {
+      await sql`ALTER TABLE projects DROP COLUMN IF EXISTS script`;
+      console.log("✓ Dropped script column");
+    } catch {
+      console.log("  script column already dropped or doesn't exist");
+    }
+
+    try {
+      await sql`ALTER TABLE projects DROP COLUMN IF EXISTS script_approved`;
+      console.log("✓ Dropped script_approved column");
+    } catch {
+      console.log("  script_approved column already dropped or doesn't exist");
+    }
 
     // Create updated_at trigger function
     console.log("Creating updated_at trigger function...");
