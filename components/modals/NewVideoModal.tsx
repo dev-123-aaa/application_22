@@ -51,9 +51,9 @@ function projectToVideo(project: Project): Video {
     primary_locations: project.primary_locations || "",
     central_theme: project.central_theme || "",
     tone: project.tone || "",
-    script: project.script || undefined,
+    script_url: project.script_url || undefined,
+    script_status: project.script_status,
     thumbnail_suggestions: project.thumbnail_suggestions || undefined,
-    script_approved: project.script_approved || false,
     video_status: project.video_status || null,
     video_drive_folder: project.video_drive_folder || null,
   };
