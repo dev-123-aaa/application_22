@@ -4,6 +4,7 @@ export type VideoStatus =
   | "Sections in creation"
   | "Sections done"
   | "Script Assembly"
+  | "Script Done"
   | "Ready for Voiceover"
   | "Voiceover in progress"
   | "Voiceover done"
@@ -57,7 +58,7 @@ export type PipelineStage = (typeof PIPELINE_STAGES)[number];
 export const PIPELINE_STAGE_CONFIG = [
   { key: "outline", label: "Outline", statuses: ["Outline in progress", "Outline done"] },
   { key: "sections", label: "Sections", statuses: ["Sections in creation", "Sections done"] },
-  { key: "script", label: "Script", statuses: ["Script Assembly", "Ready for Voiceover"] },
+  { key: "script", label: "Script", statuses: ["Script Assembly", "Script Done", "Ready for Voiceover"] },
   { key: "voiceover", label: "Voiceover", statuses: ["Voiceover in progress", "Voiceover done"] },
   { key: "images", label: "Images", statuses: ["Images generating"] },
   { key: "video-assembly", label: "Video Assembly", statuses: ["Video assembly"] },
@@ -75,6 +76,7 @@ export function getStageFromStatus(status: VideoStatus): number {
     "Sections in creation": 1,
     "Sections done": 1,
     "Script Assembly": 2,
+    "Script Done": 2,
     "Ready for Voiceover": 2,
     "Voiceover in progress": 3,
     "Voiceover done": 3,
@@ -98,6 +100,7 @@ export function isStageComplete(status: VideoStatus, stageIndex: number): boolea
   const doneStatuses: VideoStatus[] = [
     "Outline done",
     "Sections done",
+    "Script Done",
     "Ready for Voiceover",
     "Voiceover done",
     "Published",
@@ -112,6 +115,7 @@ export function isStageComplete(status: VideoStatus, stageIndex: number): boolea
 // Check if script should be available based on status
 export function hasScriptReady(status: VideoStatus): boolean {
   const postScriptStatuses: VideoStatus[] = [
+    "Script Done",
     "Ready for Voiceover",
     "Voiceover in progress",
     "Voiceover done",
@@ -124,9 +128,10 @@ export function hasScriptReady(status: VideoStatus): boolean {
   return postScriptStatuses.includes(status);
 }
 
-// Check if thumbnail generation can be triggered (Ready for Voiceover or later)
+// Check if thumbnail generation can be triggered (Script Done or later)
 export function canTriggerThumbnail(status: VideoStatus): boolean {
   const eligibleStatuses: VideoStatus[] = [
+    "Script Done",
     "Ready for Voiceover",
     "Voiceover in progress",
     "Voiceover done",

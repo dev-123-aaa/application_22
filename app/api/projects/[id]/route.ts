@@ -184,10 +184,20 @@ export async function PUT(
 ) {
   try {
     const { id } = params;
-    const body = await request.json();
+
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid JSON body" },
+        { status: 400, headers }
+      );
+    }
+
     const { script_url } = body;
 
-    console.log("PUT /api/projects/[id] - Updating project:", id);
+    console.log("PUT /api/projects/[id] - Updating project:", id, "body:", JSON.stringify(body));
 
     // Validate Google Docs URL format if script_url is provided
     if (script_url && script_url.trim() !== "" && !isValidGoogleDocsUrl(script_url)) {
@@ -228,9 +238,12 @@ export async function PUT(
     console.log("PUT /api/projects/[id] - Project updated:", id);
     return NextResponse.json({ success: true, project: result[0] }, { headers });
   } catch (error) {
-    console.error("Failed to update project:", error);
+    console.error("PUT /api/projects/[id] - Error:", error);
     return NextResponse.json(
-      { error: "Failed to update project" },
+      {
+        error: "Failed to update project",
+        details: error instanceof Error ? error.message : "Unknown error"
+      },
       { status: 500, headers }
     );
   }
