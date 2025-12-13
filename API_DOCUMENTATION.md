@@ -453,6 +453,8 @@ interface UpdateStatusRequest {
 - `"Sections in creation"`
 - `"Sections done"`
 - `"Script Assembly"`
+- `"Script Done"` - Script complete, ready for review
+- `"Ready for Voiceover"` - Script approved
 - `"Voiceover in progress"`
 - `"Voiceover done"`
 - `"Images generating"`
@@ -1432,6 +1434,8 @@ type ProjectStatus =
   | "Sections in creation"
   | "Sections done"
   | "Script Assembly"
+  | "Script Done"           // Script is complete and ready for review
+  | "Ready for Voiceover"   // Script approved, ready for voiceover
   | "Voiceover in progress"
   | "Voiceover done"
   | "Images generating"
@@ -1441,6 +1445,13 @@ type ProjectStatus =
   | "Published"
   | "Failed";
 ```
+
+**Script Done** indicates:
+- Script has been fully assembled from all sections
+- `script_url` contains the Google Doc link
+- Script is ready for human review/approval
+- User can approve the script to proceed to voiceover
+- Transition: "Script Assembly" → "Script Done" → "Ready for Voiceover"
 
 ### ScriptStatus
 

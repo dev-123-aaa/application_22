@@ -318,6 +318,11 @@ export function ScriptSection({
                 <AlertCircle className="h-3 w-3" />
                 You have unsaved changes — Save the URL before approving
               </p>
+            ) : status === "Script Done" ? (
+              <p className="text-xs text-emerald-400/70 flex items-center gap-2">
+                <Check className="h-3 w-3" />
+                Script is ready for review — Approve to proceed to voiceover
+              </p>
             ) : urlInput && isValidGoogleDocsUrl(urlInput) ? (
               <p className="text-xs text-gray-500">
                 Review the script in Google Docs and approve when ready for video generation

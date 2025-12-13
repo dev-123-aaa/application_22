@@ -55,8 +55,9 @@ function getStageState(
   // Currently in this stage
   if (currentStatusIndex >= stageStartIndex && currentStatusIndex <= stageEndIndex) {
     // Check if it's a "done" status within the stage
-    const doneStatuses = ["Outline done", "Sections done", "Ready for Voiceover", "Voiceover done"];
-    if (doneStatuses.includes(mainStatus) && currentStatusIndex === stageEndIndex) {
+    // Script Done and Ready for Voiceover both indicate the script stage is complete
+    const doneStatuses = ["Outline done", "Sections done", "Script Done", "Ready for Voiceover", "Voiceover done"];
+    if (doneStatuses.includes(mainStatus)) {
       return "completed";
     }
     return "current";

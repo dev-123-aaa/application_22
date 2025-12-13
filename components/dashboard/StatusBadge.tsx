@@ -18,6 +18,13 @@ function getStatusStyle(status: VideoStatus): {
         text: "text-emerald-400",
         border: "border-emerald-500/30",
       };
+    case "Script Done":
+      // Green to indicate script is complete and ready for review
+      return {
+        bg: "bg-emerald-500/10",
+        text: "text-emerald-400",
+        border: "border-emerald-500/30",
+      };
     case "Failed":
       return {
         bg: "bg-red-500/10",

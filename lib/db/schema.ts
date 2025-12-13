@@ -65,6 +65,8 @@ export const PROJECT_STATUSES = [
   "Sections in creation",
   "Sections done",
   "Script Assembly",
+  "Script Done",
+  "Ready for Voiceover",
   "Voiceover in progress",
   "Voiceover done",
   "Images generating",
