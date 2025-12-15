@@ -14,7 +14,7 @@ const headers = {
 };
 
 // Allowed setting keys
-const ALLOWED_KEYS = ["webhook_url", "webhook_script", "webhook_video", "webhook_thumbnail", "thumbnail_webhook_url"];
+const ALLOWED_KEYS = ["webhook_url", "webhook_script", "webhook_video", "webhook_thumbnail", "webhook_voiceover", "thumbnail_webhook_url"];
 
 // GET - Fetch current settings
 export async function GET(request: Request) {
@@ -53,6 +53,7 @@ export async function GET(request: Request) {
     const responseData: Record<string, string | null> = {
       webhook_url: null, // Legacy key, kept for backwards compatibility
       webhook_script: null,
+      webhook_voiceover: null,
       webhook_video: null,
       webhook_thumbnail: null,
       thumbnail_webhook_url: null, // Legacy key, kept for backwards compatibility

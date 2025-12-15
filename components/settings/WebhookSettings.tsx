@@ -21,6 +21,11 @@ const WEBHOOK_FIELDS: WebhookField[] = [
     description: "Triggered when starting a new video project",
   },
   {
+    key: "webhook_voiceover",
+    label: "Voiceover Generation Webhook",
+    description: "Triggered when generating voiceover. Receives: project_id, script_url, channel_id, channel_name",
+  },
+  {
     key: "webhook_video",
     label: "Video Generation Webhook",
     description: "Triggered when generating video from approved script",
@@ -35,11 +40,13 @@ const WEBHOOK_FIELDS: WebhookField[] = [
 export function WebhookSettings() {
   const [webhooks, setWebhooks] = useState<Record<string, string>>({
     webhook_script: "",
+    webhook_voiceover: "",
     webhook_video: "",
     webhook_thumbnail: "",
   });
   const [originalWebhooks, setOriginalWebhooks] = useState<Record<string, string>>({
     webhook_script: "",
+    webhook_voiceover: "",
     webhook_video: "",
     webhook_thumbnail: "",
   });
@@ -76,6 +83,7 @@ export function WebhookSettings() {
 
       const newWebhooks = {
         webhook_script: data.webhook_script || "",
+        webhook_voiceover: data.webhook_voiceover || "",
         webhook_video: data.webhook_video || "",
         webhook_thumbnail: data.webhook_thumbnail || "",
       };

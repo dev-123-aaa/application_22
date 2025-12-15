@@ -244,6 +244,22 @@ async function migrate() {
     `;
     console.log("✓ Channels trigger created");
 
+    // Migration: Add voiceover support
+    console.log("Adding voiceover_status column...");
+    await sql`
+      ALTER TABLE projects
+      ADD COLUMN IF NOT EXISTS voiceover_status VARCHAR(20) DEFAULT 'pending'
+    `;
+    console.log("✓ voiceover_status column ensured");
+
+    console.log("Adding webhook_voiceover setting...");
+    await sql`
+      INSERT INTO settings (key, value, updated_at)
+      VALUES ('webhook_voiceover', '', NOW())
+      ON CONFLICT (key) DO NOTHING
+    `;
+    console.log("✓ webhook_voiceover setting ensured");
+
     console.log("\n✅ Migration completed successfully!");
 
     // Verify tables

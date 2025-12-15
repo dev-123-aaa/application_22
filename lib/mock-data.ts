@@ -18,6 +18,7 @@ export const mockVideos: Video[] = [
     tone: "Analytical, thought-provoking",
     script_url: "https://docs.google.com/document/d/1abc123/edit",
     script_status: "approved",
+    voiceover_status: "done",
     thumbnail_suggestions: [
       `${thumbnailBase}/1a1a1a/00d4ff?text=Squidward+Spotlight+1`,
       `${thumbnailBase}/1a1a1a/ffd700?text=Squidward+Spotlight+2`,
@@ -42,6 +43,7 @@ export const mockVideos: Video[] = [
     tone: "Mysterious, investigative",
     script_url: "https://docs.google.com/document/d/2def456/edit",
     script_status: "approved",
+    voiceover_status: "in_progress",
     thumbnail_suggestions: [
       `${thumbnailBase}/0a0a0a/ff4444?text=Dark+Truth+1`,
       `${thumbnailBase}/1a1a1a/ff4444?text=Dark+Truth+2`,
@@ -65,6 +67,7 @@ export const mockVideos: Video[] = [
     tone: "Fun, engaging",
     script_url: "https://docs.google.com/document/d/3ghi789/edit",
     script_status: "draft",
+    voiceover_status: "pending",
     thumbnail_suggestions: [
       `${thumbnailBase}/1a1a1a/00d4ff?text=Krabby+Patty+1`,
       `${thumbnailBase}/0a0a0a/ffd700?text=Krabby+Patty+2`,
@@ -88,6 +91,7 @@ export const mockVideos: Video[] = [
     central_theme: "Character deep dive",
     tone: "Comedic, analytical",
     script_status: "pending",
+    voiceover_status: "pending",
     video_status: null,
     video_drive_folder: null,
   },
@@ -105,6 +109,7 @@ export const mockVideos: Video[] = [
     central_theme: "Character backstory exploration",
     tone: "Emotional, nostalgic",
     script_status: "pending",
+    voiceover_status: "pending",
     video_status: null,
     video_drive_folder: null,
   },
@@ -122,6 +127,7 @@ export const mockVideos: Video[] = [
     central_theme: "Social commentary analysis",
     tone: "Satirical, insightful",
     script_status: "pending",
+    voiceover_status: "pending",
     video_status: null,
     video_drive_folder: null,
   },
