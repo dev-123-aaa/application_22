@@ -76,11 +76,31 @@ export async function GET(request: Request) {
   }
 }
 
+// Validate Google Docs URL format
+function isValidGoogleDocsUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname !== "docs.google.com") return false;
+    const pathMatch = parsed.pathname.match(/^\/document\/d\/[a-zA-Z0-9_-]+/);
+    return pathMatch !== null;
+  } catch {
+    return false;
+  }
+}
+
 // POST - Create a new project
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { project_id: providedId, title, duration_hours, duration_minutes, channel_id } = body;
+    const {
+      project_id: providedId,
+      title,
+      duration_hours,
+      duration_minutes,
+      channel_id,
+      script_mode = "generate",
+      script_url = null,
+    } = body;
 
     // Validate input
     if (!title || title.trim() === "") {
@@ -102,6 +122,16 @@ export async function POST(request: Request) {
         { error: "Duration minutes must be between 0 and 59" },
         { status: 400, headers }
       );
+    }
+
+    // Validate script_url if provided (manual mode)
+    if (script_mode === "manual") {
+      if (!script_url || !isValidGoogleDocsUrl(script_url)) {
+        return NextResponse.json(
+          { error: "Valid Google Docs URL is required in manual mode" },
+          { status: 400, headers }
+        );
+      }
     }
 
     const sql = getDb();
@@ -147,6 +177,7 @@ export async function POST(request: Request) {
       }
     }
 
+    // Create project with script_url if manual mode, otherwise null
     const result = await sql`
       INSERT INTO projects (
         project_id,
@@ -155,6 +186,9 @@ export async function POST(request: Request) {
         duration_hours,
         duration_minutes,
         channel_id,
+        script_url,
+        script_status,
+        voiceover_status,
         created_at,
         updated_at
       )
@@ -165,6 +199,9 @@ export async function POST(request: Request) {
         ${duration_hours},
         ${duration_minutes},
         ${channel_id || null},
+        ${script_mode === "manual" ? script_url : null},
+        'pending',
+        'pending',
         NOW(),
         NOW()
       )

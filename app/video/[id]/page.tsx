@@ -10,6 +10,7 @@ import { Project } from "@/lib/db/schema";
 import { VideoHeader } from "@/components/video-detail/VideoHeader";
 import { OverviewCard } from "@/components/video-detail/OverviewCard";
 import { ScriptSection } from "@/components/video-detail/ScriptSection";
+import { VoiceoverSection } from "@/components/video-detail/VoiceoverSection";
 import { VideoGenerationSection } from "@/components/video-detail/VideoGenerationSection";
 import { ThumbnailSection } from "@/components/video-detail/ThumbnailSection";
 import { PipelineStatus } from "@/components/video-detail/PipelineStatus";
@@ -39,6 +40,7 @@ function projectToVideo(project: Project): Video {
     tone: project.tone || "",
     script_url: project.script_url || undefined,
     script_status: project.script_status || "pending",
+    voiceover_status: project.voiceover_status || "pending",
     thumbnail_suggestions: project.thumbnail_suggestions || undefined,
     video_status: project.video_status || null,
     video_drive_folder: project.video_drive_folder || null,
@@ -226,6 +228,12 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
             setVideo({ ...video, script_url: url });
             showToast("Script URL saved");
           }}
+        />
+
+        {/* Voiceover Section */}
+        <VoiceoverSection
+          video={video}
+          onUpdate={() => loadProject(false)}
         />
 
         {/* Video Generation Section */}

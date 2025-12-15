@@ -23,6 +23,8 @@ export interface CreateProjectPayload {
   duration_minutes: number;
   channel_id?: string;
   channel_name?: string;
+  script_mode?: "generate" | "manual";
+  script_url?: string;
 }
 
 export interface CreateProjectResponse {
@@ -498,6 +500,39 @@ export async function triggerThumbnailGeneration(
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to start thumbnail generation",
+    };
+  }
+}
+
+/**
+ * Trigger voiceover generation for a project
+ * Requires script to be approved
+ * @param projectId - The project UUID
+ * @throws Error if script not approved or webhook not configured
+ */
+export async function generateVoiceover(
+  projectId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch(`/api/projects/${projectId}/generate-voiceover`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Failed to generate voiceover");
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to generate voiceover:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to generate voiceover",
     };
   }
 }

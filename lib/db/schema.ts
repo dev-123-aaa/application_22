@@ -14,6 +14,16 @@ export type Channel = {
 export const SCRIPT_STATUSES = ["pending", "draft", "approved"] as const;
 export type ScriptStatus = (typeof SCRIPT_STATUSES)[number];
 
+// Voiceover status values
+export const VOICEOVER_STATUS = {
+  PENDING: "pending",
+  IN_PROGRESS: "in_progress",
+  DONE: "done",
+} as const;
+
+export const VOICEOVER_STATUSES = ["pending", "in_progress", "done"] as const;
+export type VoiceoverStatus = (typeof VOICEOVER_STATUSES)[number];
+
 export type Project = {
   project_id: string;
   title: string;
@@ -28,6 +38,7 @@ export type Project = {
   tone: string | null;
   script_url: string | null;
   script_status: ScriptStatus;
+  voiceover_status: VoiceoverStatus;
   thumbnail_suggestions: string[] | null;
   error: string | null;
   channel_id: string | null;

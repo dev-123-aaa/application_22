@@ -81,6 +81,7 @@ This application solves the problem of managing complex video production pipelin
 - main_characters, primary_locations, central_theme, tone
 - script_url (TEXT) - Google Doc URL for script
 - script_status (VARCHAR) - 'pending' | 'draft' | 'approved'
+- voiceover_status (VARCHAR) - 'pending' | 'in_progress' | 'done'
 - thumbnail_suggestions[]
 - video_status, video_drive_folder
 - channel_id (FK → channels)
@@ -98,7 +99,7 @@ This application solves the problem of managing complex video production pipelin
 
 **3. `settings`** - Key-value configuration
 ```
-- key (PK): webhook_script, webhook_video, webhook_thumbnail
+- key (PK): webhook_script, webhook_voiceover, webhook_video, webhook_thumbnail
 - value, updated_at
 ```
 
@@ -148,6 +149,7 @@ Section Chunking → Rendering → Finalizing → Video Finished
 | Method | Endpoint | Purpose |
 |--------|----------|---------|
 | POST | `/api/projects/[id]/approve-script` | Update script status (pending/draft/approved) |
+| POST | `/api/projects/[id]/generate-voiceover` | Trigger voiceover generation (requires approved script) |
 | POST | `/api/projects/[id]/generate-video` | Trigger video generation webhook |
 | POST | `/api/projects/[id]/generate-thumbnails` | Trigger thumbnail webhook |
 | POST | `/api/projects/[id]/section-progress` | Update section progress |
@@ -168,9 +170,12 @@ Section Chunking → Rendering → Finalizing → Video Finished
 ```
 User clicks "New Video" → NewVideoModal opens
   → User enters title, duration, selects channel
+  → User chooses script mode:
+    - "Generate Script" (default): Triggers script generation webhook
+    - "Manual": Paste Google Doc URL directly
   → POST /api/projects
-    → Creates DB record
-    → Triggers script generation webhook (n8n)
+    → Creates DB record with script_url if manual mode
+    → Triggers script generation webhook (n8n) if generate mode
     → n8n processes and calls POST /api/status with updates
 ```
 
@@ -186,7 +191,18 @@ n8n generates script in Google Docs → Sends script_url to POST /api/status
   → User can revoke approval (back to 'draft') if needed
 ```
 
-### 3. Video Generation
+### 3. Voiceover Generation
+```
+User clicks "Generate Voiceover" (requires approved script)
+  → POST /api/projects/[id]/generate-voiceover
+    → Validates script_status === 'approved'
+    → Fetches webhook_voiceover URL from settings
+    → Updates voiceover_status to 'in_progress'
+    → Sends { project_id, script_url, channel_id, channel_name } to n8n
+    → n8n processes and calls POST /api/status with voiceover_status: 'done'
+```
+
+### 4. Video Generation
 ```
 User clicks "Generate Video" (requires approved script)
   → POST /api/projects/[id]/generate-video
@@ -196,7 +212,7 @@ User clicks "Generate Video" (requires approved script)
     → Updates: video_status, video_drive_folder
 ```
 
-### 4. Real-time Polling
+### 5. Real-time Polling
 ```
 Dashboard loads → fetches all projects
   → Detects projects with in-progress status
@@ -217,6 +233,7 @@ The `/api/status` endpoint accepts these fields:
   status?: string                 // Pipeline status
   script_url?: string             // Google Doc URL (validated format)
   script_status?: string          // 'pending' | 'draft' | 'approved'
+  voiceover_status?: string       // 'pending' | 'in_progress' | 'done'
   total_sections?: number
   current_section?: number
   main_characters?: string | string[]  // Accepts array, converts to comma-separated
@@ -303,7 +320,9 @@ WEBHOOK_SECRET=optional_secret_for_validating_incoming_webhooks
 | `app/api/status/route.ts` | How external webhooks update projects |
 | `app/api/projects/route.ts` | Project creation + webhook triggering |
 | `components/video-detail/ScriptSection.tsx` | Google Doc URL input and approval UI |
+| `components/video-detail/VoiceoverSection.tsx` | Voiceover generation controls and status |
 | `components/video-detail/PipelineStatus.tsx` | Visual pipeline stepper |
+| `app/api/projects/[id]/generate-voiceover/route.ts` | Voiceover generation webhook trigger |
 
 ---
 

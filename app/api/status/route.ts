@@ -36,6 +36,8 @@ interface StatusUpdateRequest {
   // Video generation fields
   video_status?: string;
   video_drive_folder?: string;
+  // Voiceover generation field
+  voiceover_status?: "pending" | "in_progress" | "done";
 }
 
 // POST - Update project status (called by n8n)
@@ -82,6 +84,7 @@ export async function POST(request: Request) {
       error,
       video_status,
       video_drive_folder,
+      voiceover_status,
     } = body;
 
     // Validate required fields
@@ -97,12 +100,13 @@ export async function POST(request: Request) {
     const hasVideoStatus = video_status && typeof video_status === "string" && video_status.trim() !== "";
     const hasScriptUrl = script_url && typeof script_url === "string" && script_url.trim() !== "";
     const hasScriptStatus = script_status && ["pending", "draft", "approved"].includes(script_status);
+    const hasVoiceoverStatus = voiceover_status && ["pending", "in_progress", "done"].includes(voiceover_status);
     const hasOtherFields = total_sections !== undefined || current_section !== undefined ||
       main_characters !== undefined || primary_locations !== undefined ||
       central_theme !== undefined || tone !== undefined ||
       thumbnail_suggestions !== undefined || video_drive_folder !== undefined;
 
-    if (!hasStatus && !hasVideoStatus && !hasScriptUrl && !hasScriptStatus && !hasOtherFields) {
+    if (!hasStatus && !hasVideoStatus && !hasScriptUrl && !hasScriptStatus && !hasVoiceoverStatus && !hasOtherFields) {
       return NextResponse.json(
         { success: false, error: "At least one update field is required" },
         { status: 400 }
@@ -127,6 +131,9 @@ export async function POST(request: Request) {
 
     // Build the update query dynamically
     // Using COALESCE to only update fields that are provided
+    // For voiceover_status, only update if it's a valid value
+    const validVoiceoverStatus = hasVoiceoverStatus ? voiceover_status : null;
+
     const sql = getDb();
     const result = await sql`
       UPDATE projects
@@ -144,9 +151,10 @@ export async function POST(request: Request) {
         error = ${error ?? null},
         video_status = COALESCE(${video_status ?? null}, video_status),
         video_drive_folder = COALESCE(${video_drive_folder ?? null}, video_drive_folder),
+        voiceover_status = COALESCE(${validVoiceoverStatus}, voiceover_status),
         updated_at = NOW()
       WHERE project_id = ${project_id}
-      RETURNING project_id, status, script_status, current_section, total_sections, video_status, video_drive_folder, updated_at
+      RETURNING project_id, status, script_status, current_section, total_sections, video_status, video_drive_folder, voiceover_status, updated_at
     `;
 
     if (result.length === 0) {
@@ -172,6 +180,7 @@ export async function POST(request: Request) {
         total_sections: result[0].total_sections,
         video_status: result[0].video_status,
         video_drive_folder: result[0].video_drive_folder,
+        voiceover_status: result[0].voiceover_status,
         updated_at: result[0].updated_at,
       },
     });

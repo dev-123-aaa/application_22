@@ -18,6 +18,9 @@ export type VideoStatus =
 // Script status values
 export type ScriptStatus = "pending" | "draft" | "approved";
 
+// Voiceover status values
+export type VoiceoverStatus = "pending" | "in_progress" | "done";
+
 export type Video = {
   project_id: string;
   title: string;
@@ -33,6 +36,7 @@ export type Video = {
   tone: string;
   script_url?: string;
   script_status: ScriptStatus;
+  voiceover_status: VoiceoverStatus;
   thumbnail_suggestions?: string[];
   video_status: string | null;
   video_drive_folder: string | null;
