@@ -37,6 +37,7 @@ export type Video = {
   script_url?: string;
   script_status: ScriptStatus;
   voiceover_status: VoiceoverStatus;
+  voiceover_drive_folder?: string | null;
   thumbnail_suggestions?: string[];
   video_status: string | null;
   video_drive_folder: string | null;

@@ -1353,6 +1353,7 @@ interface StatusUpdateRequest {
   script_url?: string;                         // Google Docs URL
   script_status?: 'pending' | 'draft' | 'approved';
   voiceover_status?: 'pending' | 'in_progress' | 'done';  // Voiceover generation status
+  voiceover_drive_folder?: string;         // Google Drive folder URL for voiceover files
   total_sections?: number;
   current_section?: number;
   main_characters?: string | string[];         // Can be string or array
@@ -1394,7 +1395,8 @@ interface StatusUpdateRequest {
 ```json
 {
   "project_id": "550e8400-e29b-41d4-a716-446655440000",
-  "voiceover_status": "done"
+  "voiceover_status": "done",
+  "voiceover_drive_folder": "https://drive.google.com/drive/folders/1abc123def456"
 }
 ```
 
@@ -1427,6 +1429,7 @@ interface StatusUpdateRequest {
     "status": "Script Assembly",
     "script_status": "draft",
     "voiceover_status": "pending",
+    "voiceover_drive_folder": null,
     "current_section": 3,
     "total_sections": 5,
     "video_status": null,
@@ -1563,6 +1566,7 @@ interface Project {
 
   // Voiceover
   voiceover_status: VoiceoverStatus;      // 'pending' | 'in_progress' | 'done'
+  voiceover_drive_folder: string | null;  // Google Drive folder URL for voiceover files
 
   // Generation Outputs
   thumbnail_suggestions: string[] | null;
@@ -1716,12 +1720,13 @@ Cartoonolgy Studio integrates with n8n automation workflows through webhooks:
 1. **Trigger**: Receive webhook with `{ project_id, script_url, channel_id, channel_name }`
 2. **Fetch**: Download script content from Google Docs
 3. **Generate**: Create voiceover audio using TTS API
-4. **Upload**: Save audio to storage
+4. **Upload**: Save audio files to Google Drive folder
 5. **Update**: POST to `/api/status` with:
    ```json
    {
      "project_id": "...",
-     "voiceover_status": "done"
+     "voiceover_status": "done",
+     "voiceover_drive_folder": "https://drive.google.com/drive/folders/..."
    }
    ```
 

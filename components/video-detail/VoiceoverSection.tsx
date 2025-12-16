@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Mic, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { Mic, Loader2, CheckCircle, AlertCircle, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { generateVoiceover } from "@/lib/api";
 import { Video, VoiceoverStatus } from "@/lib/types";
@@ -117,11 +117,23 @@ export function VoiceoverSection({ video, onUpdate }: VoiceoverSectionProps) {
         {voiceoverStatus === "done" && (
           <div className="flex items-start gap-3 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-4">
             <CheckCircle className="h-5 w-5 text-emerald-400 flex-shrink-0 mt-0.5" />
-            <div>
+            <div className="flex-1">
               <p className="text-sm text-emerald-400">Voiceover generation complete!</p>
-              <p className="mt-1 text-xs text-gray-500">
-                You can regenerate the voiceover if needed.
-              </p>
+              {video.voiceover_drive_folder ? (
+                <a
+                  href={video.voiceover_drive_folder}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 inline-flex items-center gap-1.5 text-xs text-cyan-400 hover:text-cyan-300 transition-colors"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  Open Voiceover Files in Google Drive
+                </a>
+              ) : (
+                <p className="mt-1 text-xs text-gray-500">
+                  You can regenerate the voiceover if needed.
+                </p>
+              )}
             </div>
           </div>
         )}
