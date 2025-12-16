@@ -14,6 +14,7 @@ A comprehensive API reference for the Cartoonolgy Studio video production manage
   - [Delete Project](#delete-project)
 - [Project Actions API](#project-actions-api)
   - [Update Script Status](#update-script-status)
+  - [Generate Voiceover](#generate-voiceover)
   - [Generate Video](#generate-video)
   - [Generate Thumbnails](#generate-thumbnails)
   - [Update Section Progress](#update-section-progress)
@@ -177,16 +178,37 @@ interface CreateProjectRequest {
   duration_minutes: number;   // Required, 0-59
   project_id?: string;        // Optional, must be valid UUID if provided
   channel_id?: string;        // Optional, must exist if provided
+  script_mode?: 'generate' | 'manual';  // Optional, defaults to 'generate'
+  script_url?: string;        // Required if script_mode is 'manual', must be valid Google Docs URL
 }
 ```
 
-**Example Request Body**
+**Script Mode Options**
+
+| Mode | Description |
+|------|-------------|
+| `generate` | (Default) Project is created and script generation webhook is triggered |
+| `manual` | Project is created with provided `script_url`, no webhook triggered |
+
+**Example Request Body (Generate Mode - Default)**
 ```json
 {
   "title": "The Secret Life of Patrick Star",
   "duration_hours": 0,
   "duration_minutes": 20,
   "channel_id": "cartoonolgy"
+}
+```
+
+**Example Request Body (Manual Mode)**
+```json
+{
+  "title": "The Secret Life of Patrick Star",
+  "duration_hours": 0,
+  "duration_minutes": 20,
+  "channel_id": "cartoonolgy",
+  "script_mode": "manual",
+  "script_url": "https://docs.google.com/document/d/1abc123def456/edit"
 }
 ```
 
@@ -228,6 +250,7 @@ interface CreateProjectRequest {
 | 400 | `"Title is required"` | Title is missing or empty |
 | 400 | `"Duration hours must be a non-negative number"` | Invalid hours value |
 | 400 | `"Duration minutes must be between 0 and 59"` | Invalid minutes value |
+| 400 | `"Valid Google Docs URL is required in manual mode"` | Missing or invalid script_url in manual mode |
 | 400 | `"Invalid project_id format. Must be a valid UUID."` | Invalid UUID format |
 | 400 | `"Channel not found"` | Specified channel_id doesn't exist |
 | 409 | `"Project with this ID already exists"` | Duplicate project_id |
@@ -235,7 +258,7 @@ interface CreateProjectRequest {
 
 #### Examples
 
-**cURL**
+**cURL (Generate Mode - Default)**
 ```bash
 curl -X POST "https://your-app.vercel.app/api/projects" \
   -H "Content-Type: application/json" \
@@ -247,7 +270,21 @@ curl -X POST "https://your-app.vercel.app/api/projects" \
   }'
 ```
 
-**JavaScript/Fetch**
+**cURL (Manual Mode)**
+```bash
+curl -X POST "https://your-app.vercel.app/api/projects" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "The Secret Life of Patrick Star",
+    "duration_hours": 0,
+    "duration_minutes": 20,
+    "channel_id": "cartoonolgy",
+    "script_mode": "manual",
+    "script_url": "https://docs.google.com/document/d/1abc123def456/edit"
+  }'
+```
+
+**JavaScript/Fetch (Generate Mode)**
 ```javascript
 const response = await fetch('/api/projects', {
   method: 'POST',
@@ -265,6 +302,29 @@ const response = await fetch('/api/projects', {
 const data = await response.json();
 if (data.success) {
   console.log('Created project:', data.project);
+}
+```
+
+**JavaScript/Fetch (Manual Mode)**
+```javascript
+const response = await fetch('/api/projects', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    title: 'The Secret Life of Patrick Star',
+    duration_hours: 0,
+    duration_minutes: 20,
+    channel_id: 'cartoonolgy',
+    script_mode: 'manual',
+    script_url: 'https://docs.google.com/document/d/1abc123def456/edit',
+  }),
+});
+
+const data = await response.json();
+if (data.success) {
+  console.log('Created project with manual script:', data.project);
 }
 ```
 
@@ -627,6 +687,81 @@ const response = await fetch(`/api/projects/${projectId}/approve-script`, {
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ status: 'approved' }),
 });
+```
+
+---
+
+### Generate Voiceover
+
+Triggers the voiceover generation webhook for a project with an approved script.
+
+**Endpoint:** `POST /api/projects/[id]/generate-voiceover`
+
+#### URL Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | string | Yes | Project UUID |
+
+#### Prerequisites
+
+1. Script must be approved (`script_status === 'approved'`)
+2. Script URL must be set
+3. Voiceover webhook must be configured in settings (`webhook_voiceover`)
+4. Voiceover not already in progress (`voiceover_status !== 'in_progress'`)
+
+#### Webhook Payload Sent
+
+```json
+{
+  "project_id": "550e8400-e29b-41d4-a716-446655440000",
+  "script_url": "https://docs.google.com/document/d/1abc123/edit",
+  "channel_id": "cartoonolgy",
+  "channel_name": "Cartoonolgy"
+}
+```
+
+#### Response
+
+**Success (200 OK)**
+```json
+{
+  "success": true,
+  "message": "Voiceover generation started"
+}
+```
+
+**Error Responses**
+
+| Status | Error | Description |
+|--------|-------|-------------|
+| 400 | `"Script must be approved before generating voiceover"` | Script not approved |
+| 400 | `"Script URL is not set"` | Missing script_url |
+| 400 | `"Voiceover generation already in progress"` | Already generating |
+| 404 | `"Project not found"` | No project with given ID |
+| 500 | `"Voiceover webhook not configured..."` | Webhook not set up |
+| 500 | `"Voiceover webhook request timed out"` | Webhook timeout |
+| 500 | `"Failed to trigger voiceover generation"` | Webhook failed |
+
+#### Examples
+
+**cURL**
+```bash
+curl -X POST "https://your-app.vercel.app/api/projects/550e8400-e29b-41d4-a716-446655440000/generate-voiceover" \
+  -H "Content-Type: application/json"
+```
+
+**JavaScript/Fetch**
+```javascript
+const response = await fetch(`/api/projects/${projectId}/generate-voiceover`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+});
+
+const data = await response.json();
+if (data.success) {
+  console.log('Voiceover generation started!');
+}
 ```
 
 ---
@@ -1108,6 +1243,7 @@ Retrieves all webhook configuration settings.
 {
   "webhook_url": "https://n8n.example.com/webhook/script",
   "webhook_script": "https://n8n.example.com/webhook/script",
+  "webhook_voiceover": "https://n8n.example.com/webhook/voiceover",
   "webhook_video": "https://n8n.example.com/webhook/video",
   "webhook_thumbnail": "https://n8n.example.com/webhook/thumbnail",
   "thumbnail_webhook_url": null,
@@ -1121,6 +1257,7 @@ Retrieves all webhook configuration settings.
 |-------|-------------|
 | `webhook_script` | URL triggered when starting new production (primary) |
 | `webhook_url` | Legacy alias for webhook_script |
+| `webhook_voiceover` | URL triggered for voiceover generation |
 | `webhook_video` | URL triggered for video generation |
 | `webhook_thumbnail` | URL triggered for thumbnail generation (primary) |
 | `thumbnail_webhook_url` | Legacy alias for webhook_thumbnail |
@@ -1146,6 +1283,7 @@ interface UpdateSettingRequest {
 **Allowed Keys**
 - `webhook_url` (legacy)
 - `webhook_script`
+- `webhook_voiceover`
 - `webhook_video`
 - `webhook_thumbnail`
 - `thumbnail_webhook_url` (legacy)
@@ -1214,6 +1352,7 @@ interface StatusUpdateRequest {
   status?: string;                             // Pipeline status
   script_url?: string;                         // Google Docs URL
   script_status?: 'pending' | 'draft' | 'approved';
+  voiceover_status?: 'pending' | 'in_progress' | 'done';  // Voiceover generation status
   total_sections?: number;
   current_section?: number;
   main_characters?: string | string[];         // Can be string or array
@@ -1251,6 +1390,14 @@ interface StatusUpdateRequest {
 }
 ```
 
+**Example: Update voiceover status**
+```json
+{
+  "project_id": "550e8400-e29b-41d4-a716-446655440000",
+  "voiceover_status": "done"
+}
+```
+
 **Example: Set error state**
 ```json
 {
@@ -1266,6 +1413,7 @@ interface StatusUpdateRequest {
 - At least one update field must be provided
 - `script_url` must be a valid Google Docs URL if provided
 - `script_status` must be one of: `pending`, `draft`, `approved`
+- `voiceover_status` must be one of: `pending`, `in_progress`, `done`
 - Arrays for `main_characters` and `primary_locations` are automatically converted to comma-separated strings
 
 #### Response
@@ -1278,6 +1426,7 @@ interface StatusUpdateRequest {
     "project_id": "550e8400-e29b-41d4-a716-446655440000",
     "status": "Script Assembly",
     "script_status": "draft",
+    "voiceover_status": "pending",
     "current_section": 3,
     "total_sections": 5,
     "video_status": null,
@@ -1295,6 +1444,7 @@ interface StatusUpdateRequest {
 | 400 | `"project_id is required"` | Missing project_id |
 | 400 | `"At least one update field is required"` | No fields to update |
 | 400 | `"script_url must be a valid Google Docs URL..."` | Invalid script URL |
+| 400 | `"voiceover_status must be one of: pending, in_progress, done"` | Invalid voiceover status |
 | 401 | `"Unauthorized"` | Invalid webhook secret |
 | 404 | `"Project not found"` | No project with given ID |
 | 500 | `"Failed to update project status"` | Server error |
@@ -1411,6 +1561,9 @@ interface Project {
   script_url: string | null;              // Google Docs URL
   script_status: ScriptStatus;            // 'pending' | 'draft' | 'approved'
 
+  // Voiceover
+  voiceover_status: VoiceoverStatus;      // 'pending' | 'in_progress' | 'done'
+
   // Generation Outputs
   thumbnail_suggestions: string[] | null;
   video_status: VideoGenerationStatus | null;
@@ -1458,6 +1611,18 @@ type ProjectStatus =
 ```typescript
 type ScriptStatus = "pending" | "draft" | "approved";
 ```
+
+### VoiceoverStatus
+
+```typescript
+type VoiceoverStatus = "pending" | "in_progress" | "done";
+```
+
+| Status | Description |
+|--------|-------------|
+| `pending` | Voiceover has not been started |
+| `in_progress` | Voiceover generation is in progress |
+| `done` | Voiceover generation is complete |
 
 ### VideoGenerationStatus
 
@@ -1511,6 +1676,7 @@ Cartoonolgy Studio integrates with n8n automation workflows through webhooks:
 └─────────────────┘     └─────────────────┘     └─────────────────┘
         │                        │
         │  webhook_script        │  POST /api/status
+        │  webhook_voiceover     │
         │  webhook_video         │
         │  webhook_thumbnail     │
         ▼                        ▼
@@ -1521,6 +1687,7 @@ Cartoonolgy Studio integrates with n8n automation workflows through webhooks:
 | Webhook | Setting Key | Trigger | Purpose |
 |---------|-------------|---------|---------|
 | Script | `webhook_script` | New project creation | Generate script in Google Docs |
+| Voiceover | `webhook_voiceover` | "Generate Voiceover" button | Generate voiceover from script |
 | Video | `webhook_video` | "Generate Video" button | Render video from script |
 | Thumbnail | `webhook_thumbnail` | "Generate Thumbnails" button | Create thumbnail options |
 
@@ -1541,6 +1708,20 @@ Cartoonolgy Studio integrates with n8n automation workflows through webhooks:
      "total_sections": 5,
      "main_characters": "SpongeBob, Patrick",
      "central_theme": "..."
+   }
+   ```
+
+**Voiceover Generation Workflow:**
+
+1. **Trigger**: Receive webhook with `{ project_id, script_url, channel_id, channel_name }`
+2. **Fetch**: Download script content from Google Docs
+3. **Generate**: Create voiceover audio using TTS API
+4. **Upload**: Save audio to storage
+5. **Update**: POST to `/api/status` with:
+   ```json
+   {
+     "project_id": "...",
+     "voiceover_status": "done"
    }
    ```
 
@@ -1705,7 +1886,7 @@ async function pollProjectStatus(projectId, maxAttempts = 60) {
 }
 ```
 
-### Approve Script and Generate Video
+### Approve Script and Generate Content
 
 ```javascript
 async function approveAndGenerate(projectId) {
@@ -1726,7 +1907,23 @@ async function approveAndGenerate(projectId) {
 
   console.log('Script approved!');
 
-  // 2. Trigger video generation
+  // 2. Trigger voiceover generation
+  const voiceoverResponse = await fetch(
+    `/api/projects/${projectId}/generate-voiceover`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
+
+  if (!voiceoverResponse.ok) {
+    const error = await voiceoverResponse.json();
+    throw new Error(error.error);
+  }
+
+  console.log('Voiceover generation started!');
+
+  // 3. Trigger video generation
   const videoResponse = await fetch(
     `/api/projects/${projectId}/generate-video`,
     {
@@ -1742,7 +1939,7 @@ async function approveAndGenerate(projectId) {
 
   console.log('Video generation started!');
 
-  // 3. Optionally trigger thumbnail generation in parallel
+  // 4. Optionally trigger thumbnail generation in parallel
   const thumbResponse = await fetch(
     `/api/projects/${projectId}/generate-thumbnails`,
     {
