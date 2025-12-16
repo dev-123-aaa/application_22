@@ -19,6 +19,7 @@ export const mockVideos: Video[] = [
     script_url: "https://docs.google.com/document/d/1abc123/edit",
     script_status: "approved",
     voiceover_status: "done",
+    voiceover_drive_folder: "https://drive.google.com/drive/folders/voiceover-example1",
     thumbnail_suggestions: [
       `${thumbnailBase}/1a1a1a/00d4ff?text=Squidward+Spotlight+1`,
       `${thumbnailBase}/1a1a1a/ffd700?text=Squidward+Spotlight+2`,
@@ -44,6 +45,7 @@ export const mockVideos: Video[] = [
     script_url: "https://docs.google.com/document/d/2def456/edit",
     script_status: "approved",
     voiceover_status: "in_progress",
+    voiceover_drive_folder: null,
     thumbnail_suggestions: [
       `${thumbnailBase}/0a0a0a/ff4444?text=Dark+Truth+1`,
       `${thumbnailBase}/1a1a1a/ff4444?text=Dark+Truth+2`,
@@ -68,6 +70,7 @@ export const mockVideos: Video[] = [
     script_url: "https://docs.google.com/document/d/3ghi789/edit",
     script_status: "draft",
     voiceover_status: "pending",
+    voiceover_drive_folder: null,
     thumbnail_suggestions: [
       `${thumbnailBase}/1a1a1a/00d4ff?text=Krabby+Patty+1`,
       `${thumbnailBase}/0a0a0a/ffd700?text=Krabby+Patty+2`,
@@ -92,6 +95,7 @@ export const mockVideos: Video[] = [
     tone: "Comedic, analytical",
     script_status: "pending",
     voiceover_status: "pending",
+    voiceover_drive_folder: null,
     video_status: null,
     video_drive_folder: null,
   },
@@ -110,6 +114,7 @@ export const mockVideos: Video[] = [
     tone: "Emotional, nostalgic",
     script_status: "pending",
     voiceover_status: "pending",
+    voiceover_drive_folder: null,
     video_status: null,
     video_drive_folder: null,
   },
@@ -128,6 +133,7 @@ export const mockVideos: Video[] = [
     tone: "Satirical, insightful",
     script_status: "pending",
     voiceover_status: "pending",
+    voiceover_drive_folder: null,
     video_status: null,
     video_drive_folder: null,
   },

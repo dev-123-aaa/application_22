@@ -36,8 +36,9 @@ interface StatusUpdateRequest {
   // Video generation fields
   video_status?: string;
   video_drive_folder?: string;
-  // Voiceover generation field
+  // Voiceover generation fields
   voiceover_status?: "pending" | "in_progress" | "done";
+  voiceover_drive_folder?: string;
 }
 
 // POST - Update project status (called by n8n)
@@ -85,6 +86,7 @@ export async function POST(request: Request) {
       video_status,
       video_drive_folder,
       voiceover_status,
+      voiceover_drive_folder,
     } = body;
 
     // Validate required fields
@@ -104,7 +106,8 @@ export async function POST(request: Request) {
     const hasOtherFields = total_sections !== undefined || current_section !== undefined ||
       main_characters !== undefined || primary_locations !== undefined ||
       central_theme !== undefined || tone !== undefined ||
-      thumbnail_suggestions !== undefined || video_drive_folder !== undefined;
+      thumbnail_suggestions !== undefined || video_drive_folder !== undefined ||
+      voiceover_drive_folder !== undefined;
 
     if (!hasStatus && !hasVideoStatus && !hasScriptUrl && !hasScriptStatus && !hasVoiceoverStatus && !hasOtherFields) {
       return NextResponse.json(
@@ -152,9 +155,10 @@ export async function POST(request: Request) {
         video_status = COALESCE(${video_status ?? null}, video_status),
         video_drive_folder = COALESCE(${video_drive_folder ?? null}, video_drive_folder),
         voiceover_status = COALESCE(${validVoiceoverStatus}, voiceover_status),
+        voiceover_drive_folder = COALESCE(${voiceover_drive_folder ?? null}, voiceover_drive_folder),
         updated_at = NOW()
       WHERE project_id = ${project_id}
-      RETURNING project_id, status, script_status, current_section, total_sections, video_status, video_drive_folder, voiceover_status, updated_at
+      RETURNING project_id, status, script_status, current_section, total_sections, video_status, video_drive_folder, voiceover_status, voiceover_drive_folder, updated_at
     `;
 
     if (result.length === 0) {
@@ -181,6 +185,7 @@ export async function POST(request: Request) {
         video_status: result[0].video_status,
         video_drive_folder: result[0].video_drive_folder,
         voiceover_status: result[0].voiceover_status,
+        voiceover_drive_folder: result[0].voiceover_drive_folder,
         updated_at: result[0].updated_at,
       },
     });

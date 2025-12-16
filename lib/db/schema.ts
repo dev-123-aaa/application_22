@@ -39,6 +39,7 @@ export type Project = {
   script_url: string | null;
   script_status: ScriptStatus;
   voiceover_status: VoiceoverStatus;
+  voiceover_drive_folder: string | null;
   thumbnail_suggestions: string[] | null;
   error: string | null;
   channel_id: string | null;

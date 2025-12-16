@@ -260,6 +260,14 @@ async function migrate() {
     `;
     console.log("✓ webhook_voiceover setting ensured");
 
+    // Migration: Add voiceover_drive_folder column
+    console.log("Adding voiceover_drive_folder column...");
+    await sql`
+      ALTER TABLE projects
+      ADD COLUMN IF NOT EXISTS voiceover_drive_folder TEXT
+    `;
+    console.log("✓ voiceover_drive_folder column ensured");
+
     console.log("\n✅ Migration completed successfully!");
 
     // Verify tables
