@@ -41,6 +41,7 @@ function projectToVideo(project: Project): Video {
     script_url: project.script_url || undefined,
     script_status: project.script_status || "pending",
     voiceover_status: project.voiceover_status || "pending",
+    voiceover_drive_folder: project.voiceover_drive_folder || null,
     thumbnail_suggestions: project.thumbnail_suggestions || undefined,
     video_status: project.video_status || null,
     video_drive_folder: project.video_drive_folder || null,
