@@ -194,7 +194,8 @@ export async function startProduction(
 }
 
 // Fetch all projects from database (optionally filtered by channel)
-export async function fetchProjects(channelId?: string, options?: { signal?: AbortSignal }): Promise<{
+export async function fetchProjects(channelId?: string, 
+options?: { signal?: AbortSignal }): Promise<{
   success: boolean;
   projects?: Project[];
   error?: string;
@@ -234,7 +235,8 @@ export async function fetchProjects(channelId?: string, options?: { signal?: Abo
 }
 
 // Fetch single project by ID
-export async function fetchProject(id: string  options?: { signal?: AbortSignal }): Promise<{
+export async function fetchProject(id: string,  
+options?: { signal?: AbortSignal }): Promise<{
   success: boolean;
   project?: Project;
   error?: string;
