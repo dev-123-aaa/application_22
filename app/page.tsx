@@ -62,80 +62,10 @@ export default function DashboardPage() {
   const previousChannelId = useRef<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   
-  // New state for enhancements (preferredChannel removed - unused)
+  // New state for enhancements
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  // Load preferred channel from localStorage on mount
-  useEffect(() => {
-    const saved = localStorage.getItem('preferred-channel');
-    if (saved) {
-      // Store in localStorage but not in state since we're not using it
-      // Could use this for auto-selecting channel in the future
-    }
-  }, []);
-
-  // Save preferred channel when channel changes
-  useEffect(() => {
-    if (selectedChannel?.channel_id) {
-      localStorage.setItem('preferred-channel', selectedChannel.channel_id);
-    }
-  }, [selectedChannel]);
-
-  // Update document title based on selected channel
-  useEffect(() => {
-    if (selectedChannel) {
-      document.title = `${selectedChannel.name} - Video Dashboard`;
-    } else {
-      document.title = 'Video Dashboard';
-    }
-    return () => {
-      document.title = 'Video Dashboard'; // Reset on unmount
-    };
-  }, [selectedChannel]);
-
-  // Keyboard shortcuts
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'r' && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      loadProjects(selectedChannel?.channel_id, true);
-    }
-    if (e.key === 'n' && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      // Trigger "New Video" button if exists
-      const newVideoBtn = document.querySelector('[data-new-video]');
-      if (newVideoBtn instanceof HTMLElement) {
-        newVideoBtn.click();
-      }
-    }
-  }, [loadProjects, selectedChannel]);
-
-  useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleKeyDown]);
-
-  // Optimistic updates helper (removed - unused)
-  // const updateVideoOptimistically = useCallback((projectId: string, updates: Partial<Video>) => {
-  //   setVideos(prev => prev.map(video => 
-  //     video.project_id === projectId ? { ...video, ...updates } : video
-  //   ));
-  // }, [setVideos]);
-
-  // Memoize expensive calculations (inProgressCount removed - unused)
-  const hasInProgressProjects = useMemo(() => 
-    videos.some((v) => isProjectInProgress(v.status)),
-    [videos]
-  );
-
-  // Status counts for summary
-  const statusCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    videos.forEach(video => {
-      counts[video.status] = (counts[video.status] || 0) + 1;
-    });
-    return counts;
-  }, [videos]);
-
+  // Define loadProjects FIRST to avoid circular dependency
   const loadProjects = useCallback(async (channelId: string | undefined, showLoadingState = true) => {
     // Cancel previous request
     if (abortControllerRef.current) {
@@ -183,6 +113,70 @@ export default function DashboardPage() {
       }
     }
   }, [setVideos, setIsLoading, setError]);
+
+  // Now define handleKeyDown AFTER loadProjects
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'r' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      loadProjects(selectedChannel?.channel_id, true);
+    }
+    if (e.key === 'n' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      // Trigger "New Video" button if exists
+      const newVideoBtn = document.querySelector('[data-new-video]');
+      if (newVideoBtn instanceof HTMLElement) {
+        newVideoBtn.click();
+      }
+    }
+  }, [loadProjects, selectedChannel]);
+
+  // Load preferred channel from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('preferred-channel');
+    if (saved) {
+      // Store in localStorage but not in state since we're not using it
+      // Could use this for auto-selecting channel in the future
+    }
+  }, []);
+
+  // Save preferred channel when channel changes
+  useEffect(() => {
+    if (selectedChannel?.channel_id) {
+      localStorage.setItem('preferred-channel', selectedChannel.channel_id);
+    }
+  }, [selectedChannel]);
+
+  // Update document title based on selected channel
+  useEffect(() => {
+    if (selectedChannel) {
+      document.title = `${selectedChannel.name} - Video Dashboard`;
+    } else {
+      document.title = 'Video Dashboard';
+    }
+    return () => {
+      document.title = 'Video Dashboard'; // Reset on unmount
+    };
+  }, [selectedChannel]);
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
+
+  // Memoize expensive calculations
+  const hasInProgressProjects = useMemo(() => 
+    videos.some((v) => isProjectInProgress(v.status)),
+    [videos]
+  );
+
+  // Status counts for summary
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    videos.forEach(video => {
+      counts[video.status] = (counts[video.status] || 0) + 1;
+    });
+    return counts;
+  }, [videos]);
 
   // Debounced version for polling
   const debouncedLoadProjects = useMemo(
