@@ -194,7 +194,7 @@ export async function startProduction(
 }
 
 // Fetch all projects from database (optionally filtered by channel)
-export async function fetchProjects(channelId?: string): Promise<{
+export async function fetchProjects(channelId?: string, options?: { signal?: AbortSignal }): Promise<{
   success: boolean;
   projects?: Project[];
   error?: string;
@@ -208,8 +208,9 @@ export async function fetchProjects(channelId?: string): Promise<{
 
     const response = await fetch(`/api/projects?${params.toString()}`, {
       cache: "no-store",
-    });
-
+       signal: options?.signal,
+    });  
+  
     if (!response.ok) {
       throw new Error("Failed to fetch projects");
     }
@@ -220,6 +221,10 @@ export async function fetchProjects(channelId?: string): Promise<{
       projects: data.projects,
     };
   } catch (error) {
+    // Handle abort errors gracefully
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw error; // ADD THIS: Re-throw abort errors
+    }
     console.error("Failed to fetch projects:", error);
     return {
       success: false,
@@ -229,15 +234,16 @@ export async function fetchProjects(channelId?: string): Promise<{
 }
 
 // Fetch single project by ID
-export async function fetchProject(id: string): Promise<{
+export async function fetchProject(id: string  options?: { signal?: AbortSignal }): Promise<{
   success: boolean;
   project?: Project;
   error?: string;
-}> {
+}> {  
   try {
     // Cache-busting to prevent stale data
     const response = await fetch(`/api/projects/${id}?t=${Date.now()}`, {
       cache: "no-store",
+       signal: options?.signal,
     });
 
     if (response.status === 404) {
@@ -257,6 +263,9 @@ export async function fetchProject(id: string): Promise<{
       project: data.project,
     };
   } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+      throw error; // ADD THIS: Re-throw abort errors
+    }
     console.error("Failed to fetch project:", error);
     return {
       success: false,
