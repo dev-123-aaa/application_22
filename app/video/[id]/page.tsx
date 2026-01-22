@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import Link from "next/link";
-import { ArrowLeft, Loader2, AlertCircle, RefreshCw, Copy, Download, Share2 } from "lucide-react";
+import { ArrowLeft, Loader2, AlertCircle, RefreshCw, Copy, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { fetchProject } from "@/lib/api";
 import { Video } from "@/lib/types";
@@ -16,18 +16,18 @@ import { ThumbnailSection } from "@/components/video-detail/ThumbnailSection";
 import { PipelineStatus } from "@/components/video-detail/PipelineStatus";
 import { SectionProgress } from "@/components/video-detail/SectionProgress";
 import { Toast } from "@/components/ui/toast";
-import { ErrorBoundary } from "@/components/ErrorBoundary"; // You need to create this
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const POLL_INTERVAL = 10000; // 10 seconds
-const DEBOUNCE_DELAY = 500; // NEW: Debounce delay
+const DEBOUNCE_DELAY = 500; // Debounce delay
 
-// NEW: Debounce utility function
-function debounce<T extends (...args: any[]) => any>(
-  func: T,
+// Fixed: Properly typed debounce utility function
+function debounce<Args extends unknown[]>(
+  func: (...args: Args) => void,
   wait: number
-): (...args: Parameters<T>) => void {
+): (...args: Args) => void {
   let timeout: NodeJS.Timeout;
-  return (...args: Parameters<T>) => {
+  return (...args: Args) => {
     clearTimeout(timeout);
     timeout = setTimeout(() => func(...args), wait);
   };
@@ -72,7 +72,7 @@ function isProjectInProgress(status: string, videoStatus: string | null): boolea
 export default function VideoDetailPage({ params }: VideoDetailPageProps) {
   const { id } = params;
   
-  // NEW: Add document title
+  // Add document title
   useEffect(() => {
     document.title = "Loading... - Video Dashboard";
     return () => {
@@ -80,12 +80,12 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
     };
   }, []);
   
-  // NEW: Add scroll restoration
+  // Add scroll restoration
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [id]);
   
-  // NEW: Add offline detection
+  // Add offline detection
   const [isOnline, setIsOnline] = useState(true);
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -110,21 +110,30 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
   } | null>(null);
   const isInitialLoad = useRef(true);
   
-  // NEW: Add AbortController
+  // Add AbortController
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  // NEW: Optimistic updates helper
+  // Optimistic updates helper
   const updateVideoOptimistically = useCallback((updates: Partial<Video>) => {
     setVideo(prev => prev ? { ...prev, ...updates } : null);
   }, []);
 
-  // NEW: Memoize expensive calculation
+  // Memoize expensive calculation
   const isInProgress = useMemo(() => 
     video ? isProjectInProgress(video.status, video.video_status) : false,
     [video]
   );
 
-  // NEW: Add keyboard shortcuts
+  // Fixed: Added useCallback for showToast
+  const showToast = useCallback((message: string, type: "success" | "error" | "info" = "success") => {
+    setToast({ message, type });
+  }, []);
+
+  const hideToast = useCallback(() => {
+    setToast(null);
+  }, []);
+
+  // Add keyboard shortcuts
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') {
       window.history.back();
@@ -141,12 +150,12 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
   }, [handleKeyDown]);
 
   const loadProject = useCallback(async (showLoadingState = true) => {
-    // NEW: Cancel previous request
+    // Cancel previous request
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
     
-    // NEW: Create new AbortController
+    // Create new AbortController
     abortControllerRef.current = new AbortController();
     
     if (showLoadingState) {
@@ -156,27 +165,27 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
     setNotFound(false);
 
     try {
-      // NEW: Pass signal to fetchProject
+      // Pass signal to fetchProject
       const result = await fetchProject(id, { signal: abortControllerRef.current.signal });
 
       if (result.success && result.project) {
         const newVideo = projectToVideo(result.project);
         setVideo(newVideo);
         
-        // NEW: Update document title
+        // Update document title
         document.title = `${newVideo.title} - Video Dashboard`;
       } else if (result.error === "Project not found") {
         setNotFound(true);
       } else {
         setError(result.error || "Failed to load project");
       }
-    } catch (err: any) {
-      // NEW: Handle abort errors gracefully
-      if (err.name === 'AbortError') {
+    } catch (err: unknown) {
+      // Handle abort errors gracefully
+      if (err instanceof Error && err.name === 'AbortError') {
         console.log('Request aborted');
         return;
       }
-      setError(err.message || "Failed to load project");
+      setError(err instanceof Error ? err.message : "Failed to load project");
     } finally {
       if (showLoadingState) {
         setIsLoading(false);
@@ -184,7 +193,7 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
     }
   }, [id]);
 
-  // NEW: Debounced version for polling
+  // Debounced version for polling
   const debouncedLoadProject = useMemo(
     () => debounce((showLoadingState: boolean) => {
       loadProject(showLoadingState);
@@ -207,27 +216,19 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
     }
 
     const intervalId = setInterval(() => {
-      debouncedLoadProject(false); // NEW: Use debounced version
+      debouncedLoadProject(false); // Use debounced version
     }, POLL_INTERVAL);
 
     return () => {
       clearInterval(intervalId);
-      // NEW: Cleanup on unmount
+      // Cleanup on unmount
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
     };
   }, [video, isLoading, isInProgress, debouncedLoadProject]);
 
-  const showToast = (message: string, type: "success" | "error" | "info" = "success") => {
-    setToast({ message, type });
-  };
-
-  const hideToast = () => {
-    setToast(null);
-  };
-
-  // NEW: Export functionality
+  // Export functionality
   const exportProjectData = useCallback(() => {
     if (!video) return;
     
@@ -247,7 +248,7 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
     showToast('Project data exported', 'success');
   }, [video, showToast]);
 
-  // NEW: Copy project ID
+  // Copy project ID
   const copyProjectId = useCallback(() => {
     if (!video) return;
     
@@ -256,7 +257,7 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
       .catch(() => showToast('Failed to copy', 'error'));
   }, [video, showToast]);
 
-  // NEW: Loading state with skeleton
+  // Loading state with skeleton
   if (isLoading) {
     return (
       <main 
@@ -264,7 +265,7 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
         aria-label="Loading video project"
         className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8"
       >
-        {/* NEW: Screen reader announcement */}
+        {/* Screen reader announcement */}
         <div role="status" aria-live="polite" className="sr-only">
           Loading project details...
         </div>
@@ -276,7 +277,7 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
           </Button>
         </Link>
 
-        {/* NEW: Skeleton loader */}
+        {/* Skeleton loader */}
         <div className="space-y-6">
           <div className="h-12 bg-zinc-800 rounded-lg animate-pulse" />
           
@@ -304,7 +305,7 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
         aria-label="Error loading video project"
         className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8"
       >
-        {/* NEW: Screen reader announcement */}
+        {/* Screen reader announcement */}
         <div role="alert" aria-live="assertive" className="sr-only">
           Error loading project: {error}
         </div>
@@ -366,7 +367,7 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
       aria-label={`Video project: ${video.title}`}
       className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8"
     >
-      {/* NEW: Offline indicator */}
+      {/* Offline indicator */}
       {!isOnline && (
         <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
           <p className="text-yellow-400 text-sm text-center">
@@ -375,7 +376,7 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
         </div>
       )}
 
-      {/* NEW: Header with utility buttons */}
+      {/* Header with utility buttons */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
         <Link href="/">
           <Button variant="ghost" size="sm" className="gap-2">
@@ -384,7 +385,7 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
           </Button>
         </Link>
         
-        {/* NEW: Utility buttons */}
+        {/* Utility buttons */}
         <div className="flex items-center gap-2 flex-wrap">
           <Button
             variant="outline"
@@ -438,7 +439,7 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
             scriptStatus={video.script_status}
             projectId={video.project_id}
             onStatusChange={(newStatus) => {
-              // NEW: Use optimistic update
+              // Use optimistic update
               updateVideoOptimistically({ script_status: newStatus });
               if (newStatus === "approved") {
                 showToast("Script approved");
@@ -448,7 +449,7 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
                 showToast("Script status updated");
               }
             }}
-            onStatusError={(error) => showToast(error, "error")}
+            onStatusError={(errorMsg) => showToast(errorMsg, "error")}
             onUrlChange={(url) => {
               updateVideoOptimistically({ script_url: url });
               showToast("Script URL saved");
@@ -460,7 +461,7 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
         <ErrorBoundary fallback={<div className="p-4 bg-red-500/10 rounded-lg border border-red-500/20">Voiceover section failed to load</div>}>
           <VoiceoverSection
             video={video}
-            onUpdate={() => debouncedLoadProject(false)} // NEW: Use debounced version
+            onUpdate={() => debouncedLoadProject(false)} // Use debounced version
           />
         </ErrorBoundary>
 
@@ -475,7 +476,7 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
               updateVideoOptimistically({ video_status: "Section Chunking" });
             }}
             onSuccess={() => showToast("Video generation started")}
-            onError={(error) => showToast(error, "error")}
+            onError={(errorMsg) => showToast(errorMsg, "error")}
           />
         </ErrorBoundary>
 
@@ -488,9 +489,9 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
             onGenerateStart={() => showToast("Generating thumbnails...", "info")}
             onGenerateSuccess={() => {
               showToast("Thumbnail generation started");
-              debouncedLoadProject(false); // NEW: Use debounced version
+              debouncedLoadProject(false); // Use debounced version
             }}
-            onGenerateError={(error) => showToast(error, "error")}
+            onGenerateError={(errorMsg) => showToast(errorMsg, "error")}
           />
         </ErrorBoundary>
 
