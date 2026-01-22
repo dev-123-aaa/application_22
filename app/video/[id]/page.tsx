@@ -72,34 +72,7 @@ function isProjectInProgress(status: string, videoStatus: string | null): boolea
 export default function VideoDetailPage({ params }: VideoDetailPageProps) {
   const { id } = params;
   
-  // Add document title
-  useEffect(() => {
-    document.title = "Loading... - Video Dashboard";
-    return () => {
-      document.title = "Video Dashboard"; // Reset on unmount
-    };
-  }, []);
-  
-  // Add scroll restoration
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [id]);
-  
-  // Add offline detection
-  const [isOnline, setIsOnline] = useState(true);
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
+  // State declarations
   const [video, setVideo] = useState<Video | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -118,12 +91,6 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
     setVideo(prev => prev ? { ...prev, ...updates } : null);
   }, []);
 
-  // Memoize expensive calculation
-  const isInProgress = useMemo(() => 
-    video ? isProjectInProgress(video.status, video.video_status) : false,
-    [video]
-  );
-
   // Fixed: Added useCallback for showToast
   const showToast = useCallback((message: string, type: "success" | "error" | "info" = "success") => {
     setToast({ message, type });
@@ -133,22 +100,7 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
     setToast(null);
   }, []);
 
-  // Add keyboard shortcuts
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      window.history.back();
-    }
-    if (e.key === 'r' && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      loadProject(true);
-    }
-  }, [loadProject]);
-
-  useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleKeyDown]);
-
+  // Define loadProject BEFORE handleKeyDown
   const loadProject = useCallback(async (showLoadingState = true) => {
     // Cancel previous request
     if (abortControllerRef.current) {
@@ -193,6 +145,23 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
     }
   }, [id]);
 
+  // Now define handleKeyDown AFTER loadProject
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      window.history.back();
+    }
+    if (e.key === 'r' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      loadProject(true);
+    }
+  }, [loadProject]);
+
+  // Memoize expensive calculation
+  const isInProgress = useMemo(() => 
+    video ? isProjectInProgress(video.status, video.video_status) : false,
+    [video]
+  );
+
   // Debounced version for polling
   const debouncedLoadProject = useMemo(
     () => debounce((showLoadingState: boolean) => {
@@ -200,6 +169,40 @@ export default function VideoDetailPage({ params }: VideoDetailPageProps) {
     }, DEBOUNCE_DELAY),
     [loadProject]
   );
+
+  // Add document title
+  useEffect(() => {
+    document.title = "Loading... - Video Dashboard";
+    return () => {
+      document.title = "Video Dashboard"; // Reset on unmount
+    };
+  }, []);
+  
+  // Add scroll restoration
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [id]);
+  
+  // Add offline detection
+  const [isOnline, setIsOnline] = useState(true);
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Add keyboard shortcuts
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
 
   // Initial load
   useEffect(() => {
