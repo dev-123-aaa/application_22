@@ -1,145 +1,116 @@
 'use client';
-import { Users, Activity, TrendingUp, CheckCircle } from "lucide-react";
+
+import React from 'react';
 
 export default function TeamPage() {
+  const styles = {
+    container: {
+      maxWidth: '1200px',
+      margin: '0 auto',
+      padding: '32px 16px',
+      backgroundColor: '#0f172a',
+      color: 'white',
+      minHeight: '100vh'
+    },
+    header: {
+      marginBottom: '32px'
+    },
+    title: {
+      fontSize: '24px',
+      fontWeight: 'bold',
+      marginBottom: '8px'
+    },
+    subtitle: {
+      color: '#94a3b8',
+      fontSize: '16px'
+    },
+    statsGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+      gap: '24px',
+      marginBottom: '32px'
+    },
+    statCard: {
+      backgroundColor: '#1e293b',
+      padding: '24px',
+      borderRadius: '12px',
+      border: '1px solid #334155'
+    },
+    statNumber: {
+      fontSize: '32px',
+      fontWeight: 'bold',
+      margin: '8px 0'
+    },
+    statLabel: {
+      color: '#94a3b8'
+    },
+    teamMember: {
+      backgroundColor: '#1e293b',
+      padding: '16px',
+      borderRadius: '8px',
+      marginBottom: '12px',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      border: '1px solid #334155'
+    }
+  };
+
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-      {/* Page Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10 ring-1 ring-blue-500/20">
-            <Users className="h-5 w-5 text-blue-400" />
-          </div>
-          <h1 className="text-2xl font-light text-white">Team Productivity</h1>
-        </div>
-        <p className="text-gray-400 font-light">
-          Track your team performance and workload
-        </p>
+    <div style={styles.container}>
+      <div style={styles.header}>
+        <h1 style={styles.title}>👥 Team Productivity</h1>
+        <p style={styles.subtitle}>Track your team's performance and workload</p>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-2 rounded-lg bg-blue-500/10">
-              <Users className="h-5 w-5 text-blue-400" />
-            </div>
-            <span className="text-sm text-gray-400">Total</span>
-          </div>
-          <div className="text-3xl font-light text-white mb-1">8</div>
-          <div className="text-gray-400">Team Members</div>
+      <div style={styles.statsGrid}>
+        <div style={styles.statCard}>
+          <div style={styles.statLabel}>Team Members</div>
+          <div style={styles.statNumber}>8</div>
+          <div style={styles.statLabel}>Total team size</div>
         </div>
-
-        <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-2 rounded-lg bg-green-500/10">
-              <Activity className="h-5 w-5 text-green-400" />
-            </div>
-            <span className="text-sm text-gray-400">Now</span>
-          </div>
-          <div className="text-3xl font-light text-white mb-1">6</div>
-          <div className="text-gray-400">Active Now</div>
-        </div>
-
-        <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-2 rounded-lg bg-yellow-500/10">
-              <TrendingUp className="h-5 w-5 text-yellow-400" />
-            </div>
-            <span className="text-sm text-gray-400">Avg</span>
-          </div>
-          <div className="text-3xl font-light text-white mb-1">78%</div>
-          <div className="text-gray-400">Productivity</div>
-        </div>
-
-        <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-2 rounded-lg bg-purple-500/10">
-              <CheckCircle className="h-5 w-5 text-purple-400" />
-            </div>
-            <span className="text-sm text-gray-400">Today</span>
-          </div>
-          <div className="text-3xl font-light text-white mb-1">24</div>
-          <div className="text-gray-400">Tasks Today</div>
-        </div>
-      </div>
-
-      {/* Team Members List */}
-      <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700 mb-6">
-        <h2 className="text-xl font-light text-white mb-6">Team Members</h2>
         
-        <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 rounded-lg bg-gray-900/50 border border-gray-700">
-            <div className="flex items-center gap-4">
-              <div className="h-10 w-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                <span className="text-blue-300">AW</span>
-              </div>
-              <div>
-                <div className="font-medium text-white">Alex Writer</div>
-                <div className="text-sm text-gray-400">Script Writer</div>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="font-medium text-white">3 tasks</div>
-              <div className="text-sm text-green-400">Active</div>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between p-4 rounded-lg bg-gray-900/50 border border-gray-700">
-            <div className="flex items-center gap-4">
-              <div className="h-10 w-10 rounded-full bg-green-500/20 flex items-center justify-center">
-                <span className="text-green-300">SV</span>
-              </div>
-              <div>
-                <div className="font-medium text-white">Sarah VO</div>
-                <div className="text-sm text-gray-400">Voiceover Artist</div>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="font-medium text-white">2 tasks</div>
-              <div className="text-sm text-yellow-400">Recording</div>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between p-4 rounded-lg bg-gray-900/50 border border-gray-700">
-            <div className="flex items-center gap-4">
-              <div className="h-10 w-10 rounded-full bg-purple-500/20 flex items-center justify-center">
-                <span className="text-purple-300">ME</span>
-              </div>
-              <div>
-                <div className="font-medium text-white">Mike Editor</div>
-                <div className="text-sm text-gray-400">Video Editor</div>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="font-medium text-white">4 tasks</div>
-              <div className="text-sm text-blue-400">Editing</div>
-            </div>
-          </div>
+        <div style={styles.statCard}>
+          <div style={styles.statLabel}>Active Now</div>
+          <div style={styles.statNumber}>6</div>
+          <div style={styles.statLabel}>Currently working</div>
+        </div>
+        
+        <div style={styles.statCard}>
+          <div style={styles.statLabel}>Productivity</div>
+          <div style={styles.statNumber}>78%</div>
+          <div style={styles.statLabel}>Average efficiency</div>
+        </div>
+        
+        <div style={styles.statCard}>
+          <div style={styles.statLabel}>Tasks Today</div>
+          <div style={styles.statNumber}>24</div>
+          <div style={styles.statLabel}>Completed tasks</div>
         </div>
       </div>
 
-      {/* Coming Soon Section */}
-      <div className="bg-gray-800/30 rounded-xl p-6 border border-gray-700">
-        <h3 className="text-lg font-light text-white mb-4">Coming Soon</h3>
-        <ul className="text-gray-400 space-y-2">
-          <li className="flex items-center gap-2">
-            <div className="h-1.5 w-1.5 rounded-full bg-blue-500"></div>
-            Task assignment and tracking system
-          </li>
-          <li className="flex items-center gap-2">
-            <div className="h-1.5 w-1.5 rounded-full bg-green-500"></div>
-            Video production timeline views
-          </li>
-          <li className="flex items-center gap-2">
-            <div className="h-1.5 w-1.5 rounded-full bg-yellow-500"></div>
-            Workload balancing charts
-          </li>
-          <li className="flex items-center gap-2">
-            <div className="h-1.5 w-1.5 rounded-full bg-purple-500"></div>
-            Voiceover recording schedules
-          </li>
-        </ul>
+      <h2 style={{ marginBottom: '16px' }}>Team Members</h2>
+      
+      <div style={styles.teamMember}>
+        <div>
+          <div style={{ fontWeight: 'bold' }}>Alex Writer</div>
+          <div style={{ color: '#94a3b8', fontSize: '14px' }}>Script Writer</div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div>3 tasks</div>
+          <div style={{ color: '#4ade80', fontSize: '14px' }}>Active</div>
+        </div>
+      </div>
+      
+      <div style={styles.teamMember}>
+        <div>
+          <div style={{ fontWeight: 'bold' }}>Sarah VO</div>
+          <div style={{ color: '#94a3b8', fontSize: '14px' }}>Voiceover Artist</div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div>2 tasks</div>
+          <div style={{ color: '#fbbf24', fontSize: '14px' }}>Recording</div>
+        </div>
       </div>
     </div>
   );
