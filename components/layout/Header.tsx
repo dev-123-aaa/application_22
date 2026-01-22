@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Plus, BarChart3, Settings } from "lucide-react";
+import { Plus, BarChart3, Settings, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useVideos } from "@/lib/contexts/VideoContext";
 import { ChannelSwitcher } from "@/components/channel/ChannelSwitcher";
@@ -14,6 +14,7 @@ export function Header() {
 
   const isAnalyticsPage = pathname === "/analytics";
   const isDashboardPage = pathname === "/";
+  const isTeamPage = pathname === "/team";
   const isSettingsPage = pathname === "/settings";
 
   return (
@@ -54,6 +55,18 @@ export function Header() {
               <BarChart3 className="h-4 w-4" />
               Analytics
             </Link>
+             <Link
+              href="/team"
+              className={cn(
+                "px-3 py-2 text-sm font-light transition-colors rounded-md flex items-center gap-2",
+                isTeamPage
+                  ? "text-cyan-400 bg-cyan-500/10"
+                  : "text-gray-400 hover:text-white hover:bg-white/5"
+              )}
+            >
+              <Users className="h-4 w-4" />
+              Team
+            </Link>
             <Link
               href="/settings"
               className={cn(
@@ -80,6 +93,17 @@ export function Header() {
               )}
             >
               <BarChart3 className="h-4 w-4" />
+            </Button>
+          </Link>
+          <Link href="/team" className="lg:hidden">
+            <Button
+              variant={isTeamPage ? "secondary" : "ghost"}
+              size="icon"
+              className={cn(
+                isTeamPage && "text-cyan-400"
+              )}
+            >
+              <Users className="h-4 w-4" />
             </Button>
           </Link>
           <Link href="/settings" className="lg:hidden">
