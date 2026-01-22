@@ -6,6 +6,7 @@ interface Props {
   fallback?: ReactNode;
 }
 
+
 interface State {
   hasError: boolean;
   error?: Error;
