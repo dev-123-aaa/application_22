@@ -1,3 +1,4 @@
+'use client';
 import { Users, Activity, TrendingUp, CheckCircle } from "lucide-react";
 
 export default function TeamPage() {
