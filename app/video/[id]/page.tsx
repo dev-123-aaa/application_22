@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import Link from "next/link";
-import { ArrowLeft, Loader2, AlertCircle, RefreshCw, Copy, Download } from "lucide-react";
+import { ArrowLeft, AlertCircle, RefreshCw, Copy, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { fetchProject } from "@/lib/api";
 import { Video } from "@/lib/types";
