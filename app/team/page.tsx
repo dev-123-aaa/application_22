@@ -12,7 +12,7 @@ export default function TeamPage() {
           <h1 className="text-2xl font-light text-white">Team Productivity</h1>
         </div>
         <p className="text-gray-400 font-light">
-          Track your team's performance and workload
+          Track your team performance and workload
         </p>
       </div>
 
