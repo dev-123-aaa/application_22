@@ -62,15 +62,15 @@ export default function DashboardPage() {
   const previousChannelId = useRef<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   
-  // New state for enhancements
+  // New state for enhancements (preferredChannel removed - unused)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [preferredChannel, setPreferredChannel] = useState<string | null>(null);
 
   // Load preferred channel from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem('preferred-channel');
     if (saved) {
-      setPreferredChannel(saved);
+      // Store in localStorage but not in state since we're not using it
+      // Could use this for auto-selecting channel in the future
     }
   }, []);
 
@@ -114,19 +114,14 @@ export default function DashboardPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
-  // Optimistic updates helper
-  const updateVideoOptimistically = useCallback((projectId: string, updates: Partial<Video>) => {
-    setVideos(prev => prev.map(video => 
-      video.project_id === projectId ? { ...video, ...updates } : video
-    ));
-  }, [setVideos]);
+  // Optimistic updates helper (removed - unused)
+  // const updateVideoOptimistically = useCallback((projectId: string, updates: Partial<Video>) => {
+  //   setVideos(prev => prev.map(video => 
+  //     video.project_id === projectId ? { ...video, ...updates } : video
+  //   ));
+  // }, [setVideos]);
 
-  // Memoize expensive calculations
-  const inProgressCount = useMemo(() => 
-    videos.filter(v => isProjectInProgress(v.status)).length,
-    [videos]
-  );
-
+  // Memoize expensive calculations (inProgressCount removed - unused)
   const hasInProgressProjects = useMemo(() => 
     videos.some((v) => isProjectInProgress(v.status)),
     [videos]
