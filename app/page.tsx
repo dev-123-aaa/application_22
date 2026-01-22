@@ -156,8 +156,8 @@ export default function DashboardPage() {
     setError(null);
 
     try {
-      // Note: Update fetchProjects to accept signal parameter if needed
-      const result = await fetchProjects(channelId);
+      // Now with signal parameter support
+      const result = await fetchProjects(channelId, { signal: abortControllerRef.current.signal });
 
       if (result.success && result.projects) {
         const videoList = result.projects.map(projectToVideo);
