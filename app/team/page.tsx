@@ -1,4 +1,4 @@
-"use client";  // ⬅️ ADD THIS AT THE VERY TOP
+"use client";
 
 import { useState, useEffect, useRef } from 'react';
 
@@ -72,7 +72,7 @@ export default function TeamPage() {
   };
 
   // Remove team member
-  const removeMember = (id) => {
+  const removeMember = (id: number) => {
     setTeamMembers(prev => prev.filter(member => member.id !== id));
     setTeamData(prev => ({ ...prev, members: Math.max(0, prev.members - 1) }));
   };
@@ -92,7 +92,7 @@ export default function TeamPage() {
     });
 
   // Toggle task completion
-  const toggleTask = (id) => {
+  const toggleTask = (id: number) => {
     setTeamMembers(prev => prev.map(member => 
       member.id === id 
         ? { ...member, tasks: Math.max(0, member.tasks - 1) }
@@ -143,7 +143,7 @@ export default function TeamPage() {
             color: darkMode ? '#94a3b8' : '#64748b',
             fontSize: '16px'
           }}>
-            Real-time team performance & workload tracking
+            Real-time team performance &amp; workload tracking
           </p>
         </div>
         
@@ -320,7 +320,7 @@ export default function TeamPage() {
           alignItems: 'center',
           marginBottom: '16px'
         }}>
-          <h3 style={{ fontSize: '18px', fontWeight: '600' }}>Today's Progress</h3>
+          <h3 style={{ fontSize: '18px', fontWeight: '600' }}>Today&apos;s Progress</h3>
           <span style={{ 
             color: '#10b981', 
             fontWeight: '600',
