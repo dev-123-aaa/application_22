@@ -60,7 +60,7 @@ export default function TeamPage() {
     <div style={styles.container}>
       <div style={styles.header}>
         <h1 style={styles.title}>👥 Team Productivity</h1>
-        <p style={styles.subtitle}>Track your team's performance and workload</p>
+        <p style={styles.subtitle}>Track your team performance and workload</p>
       </div>
 
       <div style={styles.statsGrid}>
