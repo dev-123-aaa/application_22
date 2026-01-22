@@ -1,3 +1,5 @@
+"use client";  // ⬅️ ADD THIS AT THE VERY TOP
+
 import { useState, useEffect, useRef } from 'react';
 
 export default function TeamPage() {
