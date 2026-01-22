@@ -33,7 +33,7 @@ export default function AnalyticsPage() {
   <div className="flex items-center justify-between mb-6">
     <div>
       <h3 className="text-lg font-semibold text-white">⚡ Active Execution</h3>
-      <p className="text-sm text-gray-400 mt-1">What's being worked on right now</p>
+      <p className="text-sm text-gray-400 mt-1">What&apos;s being worked on right now</p>
     </div>
     <div className="flex items-center gap-2">
       <div className="px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full">
@@ -49,7 +49,7 @@ export default function AnalyticsPage() {
   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
     {[
       { 
-        task: "Voiceover: Naruto's Return Analysis", 
+        task: "Voiceover: Naruto&apos;s Return Analysis", 
         assignee: "Sarah VO", 
         time: "2h 15m remaining",
         status: "recording",
