@@ -161,7 +161,7 @@ export default function AnalyticsPage() {
       </div>
     ))}
   </div>
-
+  
   {/* Upcoming Queue */}
   <div className="border-t border-gray-800 pt-6">
     <div className="flex items-center justify-between mb-4">
@@ -218,6 +218,268 @@ export default function AnalyticsPage() {
     </div>
   </div>
 </div>
+
+{/* Daily Standup Section */}
+<div className="rounded-xl bg-gray-900 p-6 border border-gray-800">
+  <div className="flex items-center justify-between mb-6">
+    <div>
+      <h3 className="text-lg font-semibold text-white">📅 Daily Standup</h3>
+      <p className="text-sm text-gray-400 mt-1">Today&apos;s focus &amp; blockers</p>
+    </div>
+    <div className="text-sm text-gray-400">
+      <span className="text-white">January 22, 2026</span> • Week 4
+    </div>
+  </div>
+
+  {/* Team Status */}
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    {[
+      { 
+        name: "Alex Writer", 
+        status: "Writing", 
+        task: "Akatsuki Script", 
+        time: "4h today", 
+        available: true,
+        avatar: "AW",
+        color: "bg-blue-500/20 text-blue-400"
+      },
+      { 
+        name: "Sarah VO", 
+        status: "Recording", 
+        task: "Naruto Analysis", 
+        time: "3h booked", 
+        available: true,
+        avatar: "SV",
+        color: "bg-yellow-500/20 text-yellow-400"
+      },
+      { 
+        name: "Mike Designer", 
+        status: "Editing", 
+        task: "Hidden Leaf", 
+        time: "5h remaining", 
+        available: true,
+        avatar: "MD",
+        color: "bg-purple-500/20 text-purple-400"
+      },
+      { 
+        name: "David Dev", 
+        status: "Designing", 
+        task: "AOT Thumbnail", 
+        time: "2h today", 
+        available: false,
+        avatar: "DD",
+        color: "bg-cyan-500/20 text-cyan-400"
+      },
+    ].map((member, index) => (
+      <div key={index} className="p-4 bg-gray-800/30 rounded-lg">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${member.available ? 'bg-green-500' : 'bg-red-500'}`} />
+            <span className="text-sm font-medium text-white">{member.name}</span>
+          </div>
+          <span className={`px-2 py-1 rounded text-xs ${member.color}`}>
+            {member.status}
+          </span>
+        </div>
+        
+        <div className="flex items-center gap-3 mb-3">
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${member.color.split(' ')[0]} border ${member.color.split(' ')[1].replace('text-', 'border-')}`}>
+            <span className="text-xs font-medium">{member.avatar}</span>
+          </div>
+          <div>
+            <div className="text-sm text-gray-300">{member.task}</div>
+            <div className="text-xs text-gray-400 mt-1">{member.time}</div>
+          </div>
+        </div>
+        
+        <div className="text-xs">
+          {member.available ? (
+            <span className="text-green-400 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+              Available for tasks
+            </span>
+          ) : (
+            <span className="text-red-400 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+              In deep work mode
+            </span>
+          )}
+        </div>
+      </div>
+    ))}
+  </div>
+
+  {/* Today's Goals */}
+  <div className="mb-6">
+    <div className="flex items-center justify-between mb-3">
+      <h4 className="font-medium text-white">🎯 Today&apos;s Goals</h4>
+      <span className="text-xs text-gray-400">3/5 completed</span>
+    </div>
+    <div className="space-y-2">
+      {[
+        { 
+          goal: "Complete Naruto Return voiceover", 
+          progress: 2, 
+          total: 3, 
+          priority: "high",
+          assignee: "Sarah VO",
+          status: "in-progress"
+        },
+        { 
+          goal: "Finish Akatsuki script draft", 
+          progress: 1, 
+          total: 2, 
+          priority: "medium",
+          assignee: "Alex Writer",
+          status: "in-progress"
+        },
+        { 
+          goal: "Edit Hidden Leaf video", 
+          progress: 1, 
+          total: 1, 
+          priority: "low",
+          assignee: "Mike Designer",
+          status: "completed"
+        },
+        { 
+          goal: "Design AOT thumbnail", 
+          progress: 0, 
+          total: 1, 
+          priority: "medium",
+          assignee: "David Dev",
+          status: "not-started"
+        },
+      ].map((goal, index) => (
+        <div key={index} className="flex items-center justify-between p-3 bg-gray-800/20 rounded hover:bg-gray-800/30 transition-colors">
+          <div className="flex items-center gap-3">
+            <div className={`w-6 h-6 rounded flex items-center justify-center ${
+              goal.status === 'completed' ? 'bg-green-500/20 text-green-400' :
+              goal.status === 'in-progress' ? 'bg-yellow-500/20 text-yellow-400' :
+              'bg-gray-500/20 text-gray-400'
+            }`}>
+              {goal.status === 'completed' ? '✓' : goal.status === 'in-progress' ? '⟳' : '○'}
+            </div>
+            <div>
+              <div className="text-sm text-white">{goal.goal}</div>
+              <div className="text-xs text-gray-400 mt-1">{goal.assignee}</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className={`px-2 py-1 rounded text-xs ${
+              goal.priority === 'high' ? 'bg-red-500/20 text-red-400' :
+              goal.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+              'bg-green-500/20 text-green-400'
+            }`}>
+              {goal.priority}
+            </div>
+            <div className="text-sm text-white text-right">
+              {goal.progress}/{goal.total}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  {/* Blockers Section */}
+  <div>
+    <div className="flex items-center justify-between mb-3">
+      <h4 className="font-medium text-white">🛑 Current Blockers</h4>
+      <span className="text-xs text-gray-400">2 active blockers</span>
+    </div>
+    
+    <div className="space-y-3">
+      {/* Blocker 1 */}
+      <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-red-400">⚠️</span>
+          <span className="text-sm font-medium text-white">Audio quality issues</span>
+          <span className="px-2 py-0.5 bg-red-500/20 text-red-400 text-xs rounded">Critical</span>
+        </div>
+        <p className="text-sm text-gray-300">Naruto Return recording has background noise. Need audio cleanup before editing.</p>
+        <div className="flex items-center justify-between mt-3">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-gradient-to-r from-gray-700 to-gray-900 flex items-center justify-center">
+              <span className="text-xs">👤</span>
+            </div>
+            <span className="text-xs text-gray-400">Blocking: <span className="text-white">Sarah VO</span></span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-400">Started: 2h ago</span>
+            <button className="text-xs text-cyan-400 hover:text-cyan-300">
+              Mark resolved →
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      {/* Blocker 2 */}
+      <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-yellow-400">ℹ️</span>
+          <span className="text-sm font-medium text-white">Script review delayed</span>
+          <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 text-xs rounded">Medium</span>
+        </div>
+        <p className="text-sm text-gray-300">Akatsuki script waiting for historical accuracy check from research team.</p>
+        <div className="flex items-center justify-between mt-3">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-gradient-to-r from-gray-700 to-gray-900 flex items-center justify-center">
+              <span className="text-xs">👤</span>
+            </div>
+            <span className="text-xs text-gray-400">Affects: <span className="text-white">Alex Writer</span></span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-400">ETA: Tomorrow AM</span>
+            <button className="text-xs text-cyan-400 hover:text-cyan-300">
+              Escalate →
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      {/* No Blockers Message (when all clear) */}
+      <div className="hidden p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+        <div className="flex items-center gap-2">
+          <span className="text-green-400">✓</span>
+          <span className="text-sm font-medium text-white">No active blockers</span>
+        </div>
+        <p className="text-sm text-gray-300 mt-1">All systems are running smoothly. Keep up the good work!</p>
+      </div>
+    </div>
+  </div>
+
+  {/* Quick Status Update */}
+  <div className="mt-6 pt-6 border-t border-gray-800">
+    <h4 className="font-medium text-white mb-3">💬 Quick Status Update</h4>
+    <div className="flex gap-3">
+      <div className="flex-1">
+        <textarea 
+          placeholder="What did you work on yesterday? What are you working on today? Any blockers?"
+          className="w-full p-3 bg-gray-800/30 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 resize-none"
+          rows={3}
+        />
+      </div>
+      <button className="self-end px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg text-sm font-medium transition-colors whitespace-nowrap">
+        Update Status
+      </button>
+    </div>
+    <div className="flex gap-2 mt-3">
+      <button className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded text-xs transition-colors">
+        🎯 On track
+      </button>
+      <button className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded text-xs transition-colors">
+        ⚠️ Blocked
+      </button>
+      <button className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded text-xs transition-colors">
+        🏃 Behind
+      </button>
+      <button className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded text-xs transition-colors">
+        ✅ Ahead
+      </button>
+    </div>
+  </div>
+</div>
+        
   <div className="rounded-xl bg-gray-900 p-6 border border-gray-800">
           <h3 className="text-lg font-semibold text-white mb-6">📋 Project Pipeline</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
