@@ -27,18 +27,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 const POLL_INTERVAL = 10000; // 10 seconds
 const DEBOUNCE_DELAY = 500; // Debounce delay
@@ -108,6 +96,89 @@ function formatDate(date: Date): string {
   });
 }
 
+// Custom Card Component
+const Card = ({ children, className = "", hover = false }: { children: React.ReactNode, className?: string, hover?: boolean }) => (
+  <div className={`bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl ${hover ? 'hover:border-cyan-500/30 transition-all duration-300' : ''} ${className}`}>
+    {children}
+  </div>
+);
+
+// Custom Badge Component
+const Badge = ({ children, className = "", variant = "default" }: { children: React.ReactNode, className?: string, variant?: "default" | "outline" }) => {
+  const baseClasses = "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold";
+  const variantClasses = variant === "outline" 
+    ? "border border-gray-700/50 text-gray-300" 
+    : "bg-gray-700/50 text-white";
+  
+  return (
+    <span className={`${baseClasses} ${variantClasses} ${className}`}>
+      {children}
+    </span>
+  );
+};
+
+// Custom Progress Component
+const Progress = ({ value, className = "" }: { value: number, className?: string }) => (
+  <div className={`h-2 w-full bg-gray-700/50 rounded-full overflow-hidden ${className}`}>
+    <div 
+      className="h-full bg-gradient-to-r from-cyan-500 to-purple-500 transition-all duration-300"
+      style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
+    />
+  </div>
+);
+
+// Custom Tabs Component
+const Tabs = ({ defaultValue, children }: { defaultValue: string, children: React.ReactNode }) => {
+  const [activeTab, setActiveTab] = useState(defaultValue);
+  
+  return (
+    <div className="tabs">
+      {React.Children.map(children, (child) => {
+        if (React.isValidElement(child) && child.type === TabsList) {
+          return React.cloneElement(child, { activeTab, setActiveTab } as any);
+        }
+        if (React.isValidElement(child) && child.type === TabsContent && child.props.value === activeTab) {
+          return child;
+        }
+        return null;
+      })}
+    </div>
+  );
+};
+
+const TabsList = ({ children, activeTab, setActiveTab }: { children: React.ReactNode, activeTab: string, setActiveTab: (value: string) => void }) => (
+  <div className="flex space-x-1 bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl p-1 mb-6">
+    {React.Children.map(children, (child) => {
+      if (React.isValidElement(child) && child.type === TabsTrigger) {
+        return React.cloneElement(child, { 
+          active: child.props.value === activeTab,
+          onClick: () => setActiveTab(child.props.value)
+        } as any);
+      }
+      return child;
+    })}
+  </div>
+);
+
+const TabsTrigger = ({ children, value, active, onClick }: { children: React.ReactNode, value: string, active?: boolean, onClick?: () => void }) => (
+  <button
+    onClick={onClick}
+    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+      active 
+        ? 'bg-gradient-to-r from-cyan-500/20 to-purple-500/20 text-white' 
+        : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
+    }`}
+  >
+    {children}
+  </button>
+);
+
+const TabsContent = ({ children, value }: { children: React.ReactNode, value: string }) => (
+  <div className="tab-content">
+    {children}
+  </div>
+);
+
 export default function DashboardPage() {
   const { videos, setVideos, isLoading, setIsLoading, error, setError } = useVideos();
   const { selectedChannel, isLoading: isChannelLoading } = useChannel();
@@ -120,6 +191,7 @@ export default function DashboardPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("newest");
+  const [activeTab, setActiveTab] = useState<string>("all");
 
   // Define loadProjects FIRST to avoid circular dependency
   const loadProjects = useCallback(async (channelId: string | undefined, showLoadingState = true) => {
@@ -234,9 +306,16 @@ export default function DashboardPage() {
     return counts;
   }, [videos]);
 
-  // Filter and sort videos
+  // Filter and sort videos based on active tab
   const filteredVideos = useMemo(() => {
     let filtered = [...videos];
+    
+    // Apply tab filter
+    if (activeTab === "active") {
+      filtered = filtered.filter(v => isProjectInProgress(v.status));
+    } else if (activeTab === "published") {
+      filtered = filtered.filter(v => v.status === "Published");
+    }
     
     // Apply search filter
     if (searchQuery) {
@@ -267,7 +346,7 @@ export default function DashboardPage() {
     });
     
     return filtered;
-  }, [videos, searchQuery, statusFilter, sortBy]);
+  }, [videos, activeTab, searchQuery, statusFilter, sortBy]);
 
   // Debounced version for polling
   const debouncedLoadProjects = useMemo(
@@ -343,14 +422,14 @@ export default function DashboardPage() {
           {/* Stats skeleton */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-32 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 animate-pulse" />
+              <Card key={i} className="h-32 animate-pulse" />
             ))}
           </div>
           
           {/* Videos skeleton */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="h-80 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 animate-pulse" />
+              <Card key={i} className="h-80 animate-pulse" />
             ))}
           </div>
         </div>
@@ -389,27 +468,25 @@ export default function DashboardPage() {
             </div>
             
             <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-xl bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 hover:bg-gray-700/50"
+              <button
+                className="p-2 rounded-xl bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 hover:bg-gray-700/50 text-gray-300 hover:text-white transition-colors"
                 onClick={() => loadProjects(selectedChannel?.channel_id, true)}
                 disabled={isLoading}
               >
                 <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-              </Button>
+              </button>
               
-              <Button className="rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white font-medium gap-2">
+              <button className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white font-medium gap-2 flex items-center transition-all">
                 <Plus className="h-4 w-4" />
                 New Project
-              </Button>
+              </button>
             </div>
           </div>
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <Card className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl hover:border-cyan-500/30 transition-all duration-300">
-              <CardContent className="p-6">
+            <Card hover>
+              <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="p-3 bg-cyan-500/10 rounded-lg">
                     <BarChart3 className="h-5 w-5 text-cyan-300" />
@@ -420,11 +497,11 @@ export default function DashboardPage() {
                 </div>
                 <p className="text-3xl font-bold text-white mb-1">{stats.total}</p>
                 <p className="text-sm text-gray-400">Video Projects</p>
-              </CardContent>
+              </div>
             </Card>
 
-            <Card className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl hover:border-purple-500/30 transition-all duration-300">
-              <CardContent className="p-6">
+            <Card hover>
+              <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="p-3 bg-purple-500/10 rounded-lg">
                     <Zap className="h-5 w-5 text-purple-300" />
@@ -435,11 +512,11 @@ export default function DashboardPage() {
                 </div>
                 <p className="text-3xl font-bold text-white mb-1">{stats.inProgress}</p>
                 <p className="text-sm text-gray-400">In Progress</p>
-              </CardContent>
+              </div>
             </Card>
 
-            <Card className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl hover:border-emerald-500/30 transition-all duration-300">
-              <CardContent className="p-6">
+            <Card hover>
+              <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="p-3 bg-emerald-500/10 rounded-lg">
                     <TrendingUp className="h-5 w-5 text-emerald-300" />
@@ -450,11 +527,11 @@ export default function DashboardPage() {
                 </div>
                 <p className="text-3xl font-bold text-white mb-1">{stats.published}</p>
                 <p className="text-sm text-gray-400">Published</p>
-              </CardContent>
+              </div>
             </Card>
 
-            <Card className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl hover:border-amber-500/30 transition-all duration-300">
-              <CardContent className="p-6">
+            <Card hover>
+              <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="p-3 bg-amber-500/10 rounded-lg">
                     <Clock className="h-5 w-5 text-amber-300" />
@@ -474,8 +551,8 @@ export default function DashboardPage() {
                   <p className="text-3xl font-bold text-white mb-1">{stats.completionRate}%</p>
                   <p className="text-sm text-gray-400">Completion Rate</p>
                 </div>
-                <Progress value={stats.completionRate} className="h-2 bg-gray-700/50" />
-              </CardContent>
+                <Progress value={stats.completionRate} />
+              </div>
             </Card>
           </div>
         </header>
@@ -483,163 +560,150 @@ export default function DashboardPage() {
         {/* Main Content */}
         <div className="mb-8">
           {/* Filters and Controls */}
-          <Card className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl mb-6">
-            <CardContent className="p-6">
+          <Card className="mb-6">
+            <div className="p-6">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex-1">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
-                    <Input
+                    <input
+                      type="text"
                       placeholder="Search projects, characters, themes..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10 bg-gray-800/50 border-gray-700/50 rounded-xl focus:border-cyan-500/50"
+                      className="w-full pl-10 pr-4 py-2 bg-gray-800/50 border border-gray-700/50 rounded-xl focus:outline-none focus:border-cyan-500/50 text-white placeholder-gray-500"
                     />
                   </div>
                 </div>
                 
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 bg-gray-800/50 rounded-xl p-1">
-                    <Button
-                      variant={viewMode === "grid" ? "secondary" : "ghost"}
-                      size="sm"
-                      className="rounded-lg"
+                  <div className="flex items-center gap-1 bg-gray-800/50 rounded-xl p-1">
+                    <button
                       onClick={() => setViewMode("grid")}
+                      className={`p-2 rounded-lg ${viewMode === "grid" ? 'bg-gray-700/50 text-white' : 'text-gray-400 hover:text-white'}`}
                     >
                       <Grid3x3 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant={viewMode === "list" ? "secondary" : "ghost"}
-                      size="sm"
-                      className="rounded-lg"
+                    </button>
+                    <button
                       onClick={() => setViewMode("list")}
+                      className={`p-2 rounded-lg ${viewMode === "list" ? 'bg-gray-700/50 text-white' : 'text-gray-400 hover:text-white'}`}
                     >
                       <List className="h-4 w-4" />
-                    </Button>
+                    </button>
                   </div>
                   
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[140px] bg-gray-800/50 border-gray-700/50 rounded-xl">
-                      <Filter className="h-4 w-4 mr-2" />
-                      <SelectValue placeholder="Filter by status" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-900 border-gray-700/50">
-                      <SelectItem value="all">All Status</SelectItem>
+                  <div className="relative">
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      className="appearance-none bg-gray-800/50 border border-gray-700/50 rounded-xl px-4 py-2 pr-10 text-white focus:outline-none focus:border-cyan-500/50"
+                    >
+                      <option value="all">All Status</option>
                       {Object.keys(statusCounts).map((status) => (
-                        <SelectItem key={status} value={status}>
-                          <div className="flex items-center justify-between">
-                            <span>{status.replace('_', ' ')}</span>
-                            <Badge variant="outline" className="ml-2">
-                              {statusCounts[status]}
-                            </Badge>
-                          </div>
-                        </SelectItem>
+                        <option key={status} value={status}>
+                          {status.replace('_', ' ')} ({statusCounts[status]})
+                        </option>
                       ))}
-                    </SelectContent>
-                  </Select>
+                    </select>
+                    <Filter className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
+                  </div>
                   
-                  <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="w-[140px] bg-gray-800/50 border-gray-700/50 rounded-xl">
-                      <SelectValue placeholder="Sort by" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-900 border-gray-700/50">
-                      <SelectItem value="newest">Newest First</SelectItem>
-                      <SelectItem value="oldest">Oldest First</SelectItem>
-                      <SelectItem value="title">Title A-Z</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="relative">
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                      className="appearance-none bg-gray-800/50 border border-gray-700/50 rounded-xl px-4 py-2 pr-10 text-white focus:outline-none focus:border-cyan-500/50"
+                    >
+                      <option value="newest">Newest First</option>
+                      <option value="oldest">Oldest First</option>
+                      <option value="title">Title A-Z</option>
+                    </select>
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none">
+                      <ChevronRight className="h-4 w-4 rotate-90" />
+                    </div>
+                  </div>
                 </div>
               </div>
-            </CardContent>
+            </div>
           </Card>
 
-          {/* Status Tabs */}
-          <div className="mb-6">
-            <Tabs defaultValue="all" className="w-full">
-              <TabsList className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl p-1">
-                <TabsTrigger 
-                  value="all" 
-                  className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500/20 data-[state=active]:to-purple-500/20"
-                >
-                  All Projects
-                  <Badge className="ml-2 bg-gray-700/50">{videos.length}</Badge>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="active" 
-                  className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500/20 data-[state=active]:to-purple-500/20"
-                >
-                  In Progress
-                  <Badge className="ml-2 bg-cyan-500/20 text-cyan-300">{stats.inProgress}</Badge>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="published" 
-                  className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500/20 data-[state=active]:to-purple-500/20"
-                >
-                  Published
-                  <Badge className="ml-2 bg-emerald-500/20 text-emerald-300">{stats.published}</Badge>
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="all" className="mt-6">
-                {error ? (
-                  <Card className="bg-gradient-to-br from-red-500/10 to-red-900/10 backdrop-blur-sm border border-red-500/30 rounded-2xl">
-                    <CardContent className="p-8 text-center">
-                      <div className="inline-flex items-center justify-center w-16 h-16 bg-red-500/20 rounded-full mb-4">
-                        <AlertCircle className="h-8 w-8 text-red-400" />
-                      </div>
-                      <h3 className="text-xl font-semibold text-white mb-2">Failed to load projects</h3>
-                      <p className="text-gray-400 mb-6">{error}</p>
-                      <Button
-                        variant="outline"
-                        className="gap-2 border-red-500/30 text-red-300 hover:bg-red-500/10"
-                        onClick={() => loadProjects(selectedChannel?.channel_id, true)}
-                      >
-                        <RefreshCw className="h-4 w-4" />
-                        Try again
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <ErrorBoundary fallback={
-                    <Card className="bg-gradient-to-br from-red-500/10 to-red-900/10 backdrop-blur-sm border border-red-500/30 rounded-2xl p-6">
-                      <div className="flex items-center gap-3">
-                        <AlertCircle className="h-6 w-6 text-red-400" />
-                        <span className="text-red-300">Failed to load video list</span>
-                      </div>
-                    </Card>
-                  }>
-                    <VideoList
-                      videos={filteredVideos}
-                      isLoading={isLoading}
-                      viewMode={viewMode}
-                      emptyMessage={
-                        selectedChannel
-                          ? `No videos yet for ${selectedChannel.name}. Start your creative journey!`
-                          : "Select a channel to begin creating amazing content"
-                      }
-                    />
-                  </ErrorBoundary>
-                )}
-              </TabsContent>
-              
-              <TabsContent value="active" className="mt-6">
+          {/* Tabs */}
+          <div className="flex space-x-1 bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl p-1 mb-6">
+            <button
+              onClick={() => setActiveTab("all")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                activeTab === "all" 
+                  ? 'bg-gradient-to-r from-cyan-500/20 to-purple-500/20 text-white' 
+                  : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
+              }`}
+            >
+              All Projects
+              <Badge className="ml-2 bg-gray-700/50">{videos.length}</Badge>
+            </button>
+            <button
+              onClick={() => setActiveTab("active")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                activeTab === "active" 
+                  ? 'bg-gradient-to-r from-cyan-500/20 to-purple-500/20 text-white' 
+                  : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
+              }`}
+            >
+              In Progress
+              <Badge className="ml-2 bg-cyan-500/20 text-cyan-300">{stats.inProgress}</Badge>
+            </button>
+            <button
+              onClick={() => setActiveTab("published")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                activeTab === "published" 
+                  ? 'bg-gradient-to-r from-cyan-500/20 to-purple-500/20 text-white' 
+                  : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
+              }`}
+            >
+              Published
+              <Badge className="ml-2 bg-emerald-500/20 text-emerald-300">{stats.published}</Badge>
+            </button>
+          </div>
+
+          {/* Content based on active tab */}
+          <div className="mt-6">
+            {error ? (
+              <Card className="bg-gradient-to-br from-red-500/10 to-red-900/10 backdrop-blur-sm border border-red-500/30 rounded-2xl">
+                <div className="p-8 text-center">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-red-500/20 rounded-full mb-4">
+                    <AlertCircle className="h-8 w-8 text-red-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-white mb-2">Failed to load projects</h3>
+                  <p className="text-gray-400 mb-6">{error}</p>
+                  <button
+                    className="px-4 py-2 gap-2 border border-red-500/30 text-red-300 hover:bg-red-500/10 rounded-lg flex items-center justify-center mx-auto"
+                    onClick={() => loadProjects(selectedChannel?.channel_id, true)}
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    Try again
+                  </button>
+                </div>
+              </Card>
+            ) : (
+              <ErrorBoundary fallback={
+                <Card className="bg-gradient-to-br from-red-500/10 to-red-900/10 backdrop-blur-sm border border-red-500/30 rounded-2xl p-6">
+                  <div className="flex items-center gap-3">
+                    <AlertCircle className="h-6 w-6 text-red-400" />
+                    <span className="text-red-300">Failed to load video list</span>
+                  </div>
+                </Card>
+              }>
                 <VideoList
-                  videos={filteredVideos.filter(v => isProjectInProgress(v.status))}
+                  videos={filteredVideos}
                   isLoading={isLoading}
                   viewMode={viewMode}
-                  emptyMessage="No active projects. Start something new!"
+                  emptyMessage={
+                    selectedChannel
+                      ? `No videos yet for ${selectedChannel.name}. Start your creative journey!`
+                      : "Select a channel to begin creating amazing content"
+                  }
                 />
-              </TabsContent>
-              
-              <TabsContent value="published" className="mt-6">
-                <VideoList
-                  videos={filteredVideos.filter(v => v.status === "Published")}
-                  isLoading={isLoading}
-                  viewMode={viewMode}
-                  emptyMessage="No published videos yet. Keep creating!"
-                />
-              </TabsContent>
-            </Tabs>
+              </ErrorBoundary>
+            )}
           </div>
         </div>
 
