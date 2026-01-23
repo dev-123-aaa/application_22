@@ -358,14 +358,14 @@ export default function DashboardPage() {
           {/* Stats skeleton */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             {[1, 2, 3, 4].map((i) => (
-              <Card key={i} className="h-32 animate-pulse" />
+              <div key={i} className="h-32 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl animate-pulse" />
             ))}
           </div>
           
           {/* Videos skeleton */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Card key={i} className="h-80 animate-pulse" />
+              <div key={i} className="h-80 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl animate-pulse" />
             ))}
           </div>
         </div>
