@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useRef, useState, useMemo } from "react";
+import { useEffect, useCallback, useRef, useState, useMemo, ReactElement, ReactNode } from "react";
 import { VideoList } from "@/components/dashboard/VideoList";
 import { useVideos } from "@/lib/contexts/VideoContext";
 import { useChannel } from "@/components/channel/ChannelProvider";
@@ -21,11 +21,8 @@ import {
   Plus,
   Search,
   BarChart3,
-  Users,
-  Calendar,
   ChevronRight
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const POLL_INTERVAL = 10000; // 10 seconds
@@ -87,15 +84,6 @@ function getStatusColor(status: string): string {
   return colors[status.toLowerCase()] || "bg-gray-500/20 text-gray-300 border-gray-500/30";
 }
 
-// Format date
-function formatDate(date: Date): string {
-  return new Date(date).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
-  });
-}
-
 // Custom Card Component
 const Card = ({ children, className = "", hover = false }: { children: React.ReactNode, className?: string, hover?: boolean }) => (
   <div className={`bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl ${hover ? 'hover:border-cyan-500/30 transition-all duration-300' : ''} ${className}`}>
@@ -124,58 +112,6 @@ const Progress = ({ value, className = "" }: { value: number, className?: string
       className="h-full bg-gradient-to-r from-cyan-500 to-purple-500 transition-all duration-300"
       style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
     />
-  </div>
-);
-
-// Custom Tabs Component
-const Tabs = ({ defaultValue, children }: { defaultValue: string, children: React.ReactNode }) => {
-  const [activeTab, setActiveTab] = useState(defaultValue);
-  
-  return (
-    <div className="tabs">
-      {React.Children.map(children, (child) => {
-        if (React.isValidElement(child) && child.type === TabsList) {
-          return React.cloneElement(child, { activeTab, setActiveTab } as any);
-        }
-        if (React.isValidElement(child) && child.type === TabsContent && child.props.value === activeTab) {
-          return child;
-        }
-        return null;
-      })}
-    </div>
-  );
-};
-
-const TabsList = ({ children, activeTab, setActiveTab }: { children: React.ReactNode, activeTab: string, setActiveTab: (value: string) => void }) => (
-  <div className="flex space-x-1 bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl p-1 mb-6">
-    {React.Children.map(children, (child) => {
-      if (React.isValidElement(child) && child.type === TabsTrigger) {
-        return React.cloneElement(child, { 
-          active: child.props.value === activeTab,
-          onClick: () => setActiveTab(child.props.value)
-        } as any);
-      }
-      return child;
-    })}
-  </div>
-);
-
-const TabsTrigger = ({ children, value, active, onClick }: { children: React.ReactNode, value: string, active?: boolean, onClick?: () => void }) => (
-  <button
-    onClick={onClick}
-    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-      active 
-        ? 'bg-gradient-to-r from-cyan-500/20 to-purple-500/20 text-white' 
-        : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
-    }`}
-  >
-    {children}
-  </button>
-);
-
-const TabsContent = ({ children, value }: { children: React.ReactNode, value: string }) => (
-  <div className="tab-content">
-    {children}
   </div>
 );
 
