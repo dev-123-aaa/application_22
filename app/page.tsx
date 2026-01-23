@@ -325,28 +325,14 @@ export default function DashboardPage() {
             <span className="text-red-300">Failed to load video list</span>
           </div>
         }>
+          {/* Pass simple string to VideoList instead of JSX */}
           <VideoList
             videos={videos}
             isLoading={isLoading}
             emptyMessage={
-              selectedChannel ? (
-                <div className="text-center py-12">
-                  <div className="text-6xl mb-4">🎬</div>
-                  <h3 className="text-lg font-medium text-white mb-2">No videos yet</h3>
-                  <p className="text-gray-400 mb-6">
-                    Start your first video production for {selectedChannel.name}
-                  </p>
-                  <Button data-new-video>Create New Video</Button>
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <div className="text-6xl mb-4">📺</div>
-                  <h3 className="text-lg font-medium text-white mb-2">Select a channel</h3>
-                  <p className="text-gray-400">
-                    Choose a channel to see its video projects
-                  </p>
-                </div>
-              )
+              selectedChannel
+                ? `No videos yet for ${selectedChannel.name}. Click 'New Video' to start your first production.`
+                : "Select a channel to see video projects"
             }
           />
         </ErrorBoundary>
