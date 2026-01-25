@@ -74,10 +74,12 @@ interface N8NResult {
   message: string;
 }
 
-// Generate Google Drive link
-function generateDriveLink(inputCaseName: string, inputYear: string): string {
+// Generate Google Drive link - ACTUALLY USE the parameters
+function generateDriveLink(caseName: string, year: string): string {
   // In reality, this would create/access a specific Google Drive folder
-  const folderId = `1${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
+  // Use caseName and year to create a meaningful folder name
+  const safeCaseName = caseName.replace(/[^a-z0-9]/gi, '_').toLowerCase().substring(0, 20);
+  const folderId = `1${safeCaseName}_${year}_${Math.random().toString(36).substring(2, 8)}`;
   return `https://drive.google.com/drive/folders/${folderId}`;
 }
 
