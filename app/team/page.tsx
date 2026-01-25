@@ -30,6 +30,7 @@ export default function TeamPage() {
   const [darkMode, setDarkMode] = useState(true);
   const [sortBy, setSortBy] = useState('name');
   const productivityRef = useRef(78);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Simulate real-time updates
   useEffect(() => {
@@ -111,7 +112,7 @@ export default function TeamPage() {
 
   // n8n send function
   const sendToN8n = async () => {
-    const textarea = document.getElementById('n8nContentInput') as HTMLTextAreaElement;
+    const textarea = textareaRef.current;
     const button = document.getElementById('sendToN8nBtn') as HTMLButtonElement;
     const statusDiv = document.getElementById('n8nStatus');
     
@@ -188,7 +189,7 @@ export default function TeamPage() {
 
   // Insert team report template
   const insertTeamReport = () => {
-    const textarea = document.getElementById('n8nContentInput') as HTMLTextAreaElement;
+    const textarea = textareaRef.current;
     if (!textarea) return;
     
     textarea.value = `Team Productivity Report - ${new Date().toLocaleDateString()}
@@ -222,7 +223,7 @@ Action Items:
     
     try {
       const text = await file.text();
-      const textarea = document.getElementById('n8nContentInput') as HTMLTextAreaElement;
+      const textarea = textareaRef.current;
       if (textarea) {
         textarea.value = text;
         const event = new Event('input', { bubbles: true });
@@ -235,7 +236,7 @@ Action Items:
 
   // Handle template click
   const handleTemplateClick = (template: string) => {
-    const textarea = document.getElementById('n8nContentInput') as HTMLTextAreaElement;
+    const textarea = textareaRef.current;
     if (textarea) {
       textarea.value = template;
       const event = new Event('input', { bubbles: true });
@@ -245,7 +246,7 @@ Action Items:
 
   // Initialize character count on component mount
   useEffect(() => {
-    const textarea = document.getElementById('n8nContentInput');
+    const textarea = textareaRef.current;
     const charCount = document.getElementById('charCount');
     
     if (textarea && charCount) {
@@ -835,6 +836,7 @@ Action Items:
         {/* Content Input Area */}
         <div style={{ marginBottom: '24px' }}>
           <textarea
+            ref={textareaRef}
             id="n8nContentInput"
             placeholder={`📝 Paste your content here...
 
