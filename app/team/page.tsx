@@ -108,6 +108,157 @@ export default function TeamPage() {
   // Calculate progress percentage
   const progressPercentage = (teamData.tasksCompleted / teamData.totalTasks) * 100;
 
+  // n8n send function
+  const sendToN8n = async () => {
+    const textarea = document.getElementById('n8nContentInput') as HTMLTextAreaElement;
+    const button = document.getElementById('sendToN8nBtn') as HTMLButtonElement;
+    const statusDiv = document.getElementById('n8nStatus');
+    
+    if (!textarea || !textarea.value.trim()) {
+      if (statusDiv) {
+        statusDiv.innerHTML = '⚠️ Please enter some content first';
+        statusDiv.style.color = '#f59e0b';
+      }
+      return;
+    }
+
+    // Disable button and show loading
+    if (button) {
+      button.disabled = true;
+      button.innerHTML = '🔄 Processing...';
+    }
+    
+    if (statusDiv) {
+      statusDiv.innerHTML = '🔄 Sending to n8n workflow...';
+      statusDiv.style.color = '#3b82f6';
+    }
+
+    try {
+      const response = await fetch('/api/n8n/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: textarea.value,
+          timestamp: new Date().toISOString(),
+          source: 'team-dashboard',
+          action: 'process_content',
+          metadata: {
+            team_members: teamData.members,
+            productivity: teamData.productivity,
+            active_members: teamData.active
+          }
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        if (statusDiv) {
+          statusDiv.innerHTML = '✅ Successfully sent to n8n workflow!';
+          statusDiv.style.color = '#10b981';
+        }
+        textarea.value = ''; // Clear input
+        
+        // Update character count
+        const charCount = document.getElementById('charCount');
+        if (charCount) charCount.textContent = '0';
+      } else {
+        if (statusDiv) {
+          statusDiv.innerHTML = `❌ Error: ${data.error || 'Failed to send'}`;
+          statusDiv.style.color = '#ef4444';
+        }
+      }
+    } catch (error) {
+      if (statusDiv) {
+        statusDiv.innerHTML = '❌ Network error. Please try again.';
+        statusDiv.style.color = '#ef4444';
+      }
+      console.error('Error sending to n8n:', error);
+    } finally {
+      // Re-enable button
+      if (button) {
+        button.disabled = false;
+        button.innerHTML = '🚀 Send to n8n';
+      }
+    }
+  };
+
+  // Insert team report template
+  const insertTeamReport = () => {
+    const textarea = document.getElementById('n8nContentInput') as HTMLTextAreaElement;
+    if (!textarea) return;
+    
+    textarea.value = `Team Productivity Report - ${new Date().toLocaleDateString()}
+
+👥 Team Members: ${teamData.members}
+🟢 Active Now: ${teamData.active}
+📈 Productivity: ${teamData.productivity}%
+✅ Tasks Completed Today: ${teamData.tasksCompleted}/${teamData.totalTasks}
+📊 Weekly Trend: ${teamData.weeklyTrend}
+
+Team Status:
+${teamMembers.map(member => 
+  `• ${member.name} (${member.role}): ${member.status} - ${member.tasks} tasks`
+).join('\n')}
+
+Action Items:
+1. Review productivity metrics
+2. Assign pending tasks
+3. Schedule team sync
+4. Update project timelines`;
+    
+    // Trigger input event for character count
+    const event = new Event('input', { bubbles: true });
+    textarea.dispatchEvent(event);
+  };
+
+  // Handle file upload
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    try {
+      const text = await file.text();
+      const textarea = document.getElementById('n8nContentInput') as HTMLTextAreaElement;
+      if (textarea) {
+        textarea.value = text;
+        const event = new Event('input', { bubbles: true });
+        textarea.dispatchEvent(event);
+      }
+    } catch (error) {
+      console.error('Error reading file:', error);
+    }
+  };
+
+  // Handle template click
+  const handleTemplateClick = (template: string) => {
+    const textarea = document.getElementById('n8nContentInput') as HTMLTextAreaElement;
+    if (textarea) {
+      textarea.value = template;
+      const event = new Event('input', { bubbles: true });
+      textarea.dispatchEvent(event);
+    }
+  };
+
+  // Initialize character count on component mount
+  useEffect(() => {
+    const textarea = document.getElementById('n8nContentInput');
+    const charCount = document.getElementById('charCount');
+    
+    if (textarea && charCount) {
+      const updateCharCount = () => {
+        charCount.textContent = textarea.value.length.toString();
+      };
+      
+      textarea.addEventListener('input', updateCharCount);
+      updateCharCount(); // Initial count
+      
+      return () => textarea.removeEventListener('input', updateCharCount);
+    }
+  }, []);
+
   return (
     <div style={{
       maxWidth: '1400px',
@@ -634,6 +785,287 @@ export default function TeamPage() {
         </div>
         <div style={{ marginTop: '16px', color: darkMode ? '#64748b' : '#94a3b8', fontSize: '12px' }}>
           Data updates in real-time • Last refresh: Just now
+        </div>
+      </div>
+
+      {/* ========== N8N INTEGRATION SECTION ========== */}
+      <div style={{
+        marginTop: '40px',
+        background: darkMode ? '#1e293b' : '#ffffff',
+        padding: '32px',
+        borderRadius: '20px',
+        border: `2px solid ${darkMode ? '#3b82f6' : '#3b82f6'}`,
+        boxShadow: darkMode ? 
+          '0 10px 25px -5px rgba(59, 130, 246, 0.2)' : 
+          '0 10px 25px -5px rgba(59, 130, 246, 0.1)'
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '16px',
+          marginBottom: '24px'
+        }}>
+          <div style={{
+            width: '56px',
+            height: '56px',
+            borderRadius: '14px',
+            background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '28px'
+          }}>
+            🤖
+          </div>
+          <div>
+            <h2 style={{ fontSize: '24px', fontWeight: '700' }}>
+              n8n Automation Hub
+            </h2>
+            <p style={{ 
+              color: darkMode ? '#94a3b8' : '#64748b',
+              fontSize: '14px',
+              marginTop: '4px'
+            }}>
+              Send content directly to your n8n workflows for processing
+            </p>
+          </div>
+        </div>
+
+        {/* Content Input Area */}
+        <div style={{ marginBottom: '24px' }}>
+          <textarea
+            id="n8nContentInput"
+            placeholder={`📝 Paste your content here...
+            
+Examples:
+• Video scripts for Family Guy episodes
+• Voiceover recording instructions  
+• Editing notes and timelines
+• Task assignments for team members
+• Any content that needs automation
+• AI processing requests
+• Workflow triggers`}
+            style={{
+              width: '100%',
+              height: '200px',
+              padding: '20px',
+              background: darkMode ? '#0f172a' : '#f8fafc',
+              color: darkMode ? 'white' : '#0f172a',
+              border: `1px solid ${darkMode ? '#334155' : '#cbd5e1'}`,
+              borderRadius: '12px',
+              fontSize: '15px',
+              lineHeight: '1.6',
+              resize: 'vertical',
+              fontFamily: 'monospace',
+              outline: 'none',
+              transition: 'all 0.3s ease'
+            }}
+            onFocus={(e) => e.target.style.border = `1px solid #3b82f6`}
+            onBlur={(e) => e.target.style.border = `1px solid ${darkMode ? '#334155' : '#cbd5e1'}`}
+          />
+          
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginTop: '12px'
+          }}>
+            <div style={{
+              color: darkMode ? '#94a3b8' : '#64748b',
+              fontSize: '14px'
+            }}>
+              Supports text, markdown, JSON, or any structured content
+            </div>
+            <div style={{
+              color: darkMode ? '#64748b' : '#94a3b8',
+              fontSize: '14px'
+            }}>
+              <span id="charCount">0</span> characters
+            </div>
+          </div>
+        </div>
+
+        {/* File Upload Option */}
+        <div style={{
+          background: darkMode ? '#0f172a' : '#f1f5f9',
+          padding: '20px',
+          borderRadius: '12px',
+          border: `1px dashed ${darkMode ? '#334155' : '#cbd5e1'}`,
+          marginBottom: '24px'
+        }}>
+          <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px' }}>
+            📁 Or upload a file:
+          </h3>
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <input
+              type="file"
+              id="fileUpload"
+              accept=".txt,.md,.json,.csv,.docx,.pdf"
+              style={{
+                flex: '1',
+                minWidth: '200px',
+                padding: '12px',
+                background: darkMode ? '#1e293b' : '#ffffff',
+                border: `1px solid ${darkMode ? '#334155' : '#cbd5e1'}`,
+                borderRadius: '8px',
+                color: darkMode ? 'white' : '#0f172a',
+                fontSize: '14px',
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+              onChange={handleFileUpload}
+            />
+            <div style={{
+              color: darkMode ? '#94a3b8' : '#64748b',
+              fontSize: '13px'
+            }}>
+              Supports: .txt, .md, .json, .csv, .docx, .pdf
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
+          <button
+            id="sendToN8nBtn"
+            style={{
+              flex: '1',
+              padding: '16px 24px',
+              background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '10px',
+              fontSize: '16px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+            onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+            onClick={sendToN8n}
+          >
+            🚀 Send to n8n
+          </button>
+          
+          <button
+            style={{
+              padding: '16px 24px',
+              background: 'transparent',
+              color: darkMode ? '#94a3b8' : '#64748b',
+              border: `1px solid ${darkMode ? '#334155' : '#cbd5e1'}`,
+              borderRadius: '10px',
+              fontSize: '16px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.background = darkMode ? '#0f172a' : '#f1f5f9'}
+            onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+            onClick={insertTeamReport}
+          >
+            📋 Insert Team Report
+          </button>
+        </div>
+
+        {/* Status Message */}
+        <div
+          id="n8nStatus"
+          style={{
+            padding: '16px',
+            background: darkMode ? '#0f172a' : '#f8fafc',
+            border: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`,
+            borderRadius: '10px',
+            textAlign: 'center',
+            fontSize: '15px',
+            fontWeight: '500',
+            minHeight: '52px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: '24px'
+          }}
+        >
+          💡 Enter content above and click "Send to n8n"
+        </div>
+
+        {/* Templates Section */}
+        <div style={{
+          background: darkMode ? '#0f172a' : '#f8fafc',
+          padding: '20px',
+          borderRadius: '12px',
+          border: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`
+        }}>
+          <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '16px' }}>
+            ⚡ Quick Templates
+          </h3>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            {[
+              { label: 'Video Script', emoji: '🎬', template: 'Video Script Template\n\nTitle:\nDuration:\nVoiceover Notes:\nVisual Elements:\nCall to Action:' },
+              { label: 'Team Task', emoji: '📋', template: 'Task Assignment\n\nAssignee:\nPriority:\nDeadline:\nDescription:\nSuccess Criteria:' },
+              { label: 'Meeting Notes', emoji: '📝', template: 'Meeting Notes\n\nDate:\nAttendees:\nAgenda:\nDecisions:\nAction Items:' },
+              { label: 'Content Brief', emoji: '📄', template: 'Content Brief\n\nTopic:\nTarget Audience:\nKey Points:\nFormat:\nSEO Keywords:' }
+            ].map((template, index) => (
+              <button
+                key={index}
+                style={{
+                  padding: '12px 20px',
+                  background: darkMode ? '#1e293b' : '#ffffff',
+                  color: darkMode ? 'white' : '#0f172a',
+                  border: `1px solid ${darkMode ? '#334155' : '#cbd5e1'}`,
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                onClick={() => handleTemplateClick(template.template)}
+              >
+                {template.emoji} {template.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Instructions */}
+        <div style={{
+          marginTop: '24px',
+          padding: '20px',
+          background: darkMode ? 'rgba(59, 130, 246, 0.1)' : 'rgba(59, 130, 246, 0.05)',
+          border: `1px solid ${darkMode ? 'rgba(59, 130, 246, 0.3)' : 'rgba(59, 130, 246, 0.2)'}`,
+          borderRadius: '12px',
+          color: darkMode ? '#94a3b8' : '#64748b',
+          fontSize: '14px',
+          lineHeight: '1.6'
+        }}>
+          <h4 style={{ color: '#3b82f6', fontSize: '15px', fontWeight: '600', marginBottom: '12px' }}>
+            💡 How n8n Integration Works:
+          </h4>
+          <ol style={{ paddingLeft: '20px', marginBottom: '12px' }}>
+            <li>Team enters content in the box above</li>
+            <li>Click "Send to n8n" to trigger your workflow</li>
+            <li>Content is sent to your n8n webhook URL</li>
+            <li>n8n processes the content (AI, automation, etc.)</li>
+            <li>Results are delivered to your configured destinations</li>
+          </ol>
+          <div style={{ 
+            color: darkMode ? '#3b82f6' : '#2563eb',
+            fontSize: '13px',
+            fontWeight: '500'
+          }}>
+            🔗 Connected to: Your n8n workflow
+          </div>
         </div>
       </div>
     </div>
