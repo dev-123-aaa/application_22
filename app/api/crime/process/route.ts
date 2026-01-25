@@ -20,14 +20,23 @@ const CRIME_ARCHIVES = [
   'Public Records Office'
 ];
 
+// Interface for archive search results
+interface ArchiveSearchResult {
+  imageCount: number;
+  archivesSearched: string[];
+  caseName: string;
+  year: string;
+}
+
 // Simulate searching archives
-async function searchCrimeArchives(crimeScript: string) {
+async function searchCrimeArchives(crimeScript: string): Promise<ArchiveSearchResult> {
   // In reality, this would call external APIs or databases
   // For now, we simulate the search
   
   // Extract key information from script
   const lines = crimeScript.split('\n');
-  const caseName = lines.find(line => line.includes('CASE:')) || 'Unknown Case';
+  const caseNameLine = lines.find(line => line.includes('CASE:')) || 'Unknown Case';
+  const caseName = caseNameLine.replace('CASE:', '').trim();
   const yearMatch = crimeScript.match(/\b(19|20)\d{2}\b/);
   const year = yearMatch ? yearMatch[0] : 'Unknown';
   
@@ -46,20 +55,35 @@ async function searchCrimeArchives(crimeScript: string) {
   return {
     imageCount,
     archivesSearched,
-    caseName: caseName.replace('CASE:', '').trim(),
+    caseName,
     year
   };
 }
 
+// Interface for metadata
+interface ProcessMetadata {
+  scriptLength?: number;
+  teamId?: string;
+  requestedBy?: string;
+  [key: string]: unknown;
+}
+
+// Interface for n8n result
+interface N8NResult {
+  success: boolean;
+  n8nData?: unknown;
+  message: string;
+}
+
 // Generate Google Drive link
-function generateDriveLink(caseName: string, year: string) {
+function generateDriveLink(caseName: string, year: string): string {
   // In reality, this would create/access a specific Google Drive folder
   const folderId = `1${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
   return `https://drive.google.com/drive/folders/${folderId}`;
 }
 
 // Process the crime script with n8n
-async function processWithN8N(crimeScript: string, metadata: any) {
+async function processWithN8N(crimeScript: string, metadata: ProcessMetadata): Promise<N8NResult> {
   try {
     // This is where you'd send the data to your n8n workflow
     const n8nResponse = await fetch(N8N_WEBHOOK_URL, {
@@ -97,9 +121,15 @@ async function processWithN8N(crimeScript: string, metadata: any) {
   }
 }
 
+// Interface for request body
+interface CrimeProcessRequestBody {
+  crimeScript: string;
+  metadata?: ProcessMetadata;
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body: CrimeProcessRequestBody = await request.json();
     const { crimeScript, metadata } = body;
 
     if (!crimeScript) {
