@@ -30,9 +30,6 @@ interface ArchiveSearchResult {
 
 // Simulate searching archives
 async function searchCrimeArchives(crimeScript: string): Promise<ArchiveSearchResult> {
-  // In reality, this would call external APIs or databases
-  // For now, we simulate the search
-  
   // Extract key information from script
   const lines = crimeScript.split('\n');
   const caseNameLine = lines.find(line => line.includes('CASE:')) || 'Unknown Case';
@@ -78,7 +75,7 @@ interface N8NResult {
 }
 
 // Generate Google Drive link
-function generateDriveLink(caseName: string, year: string): string {
+function generateDriveLink(inputCaseName: string, inputYear: string): string {
   // In reality, this would create/access a specific Google Drive folder
   const folderId = `1${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
   return `https://drive.google.com/drive/folders/${folderId}`;
@@ -132,7 +129,7 @@ interface CrimeProcessRequestBody {
 export async function POST(request: NextRequest) {
   try {
     const body: CrimeProcessRequestBody = await request.json();
-    const { crimeScript, metadata } = body;
+    const { crimeScript, metadata = {} } = body;
 
     if (!crimeScript) {
       return NextResponse.json(
