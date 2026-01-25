@@ -572,6 +572,59 @@ EVIDENCE COLLECTION:
         ))}
       </div>
 
+      {/* Progress Bar - Now using the progressPercentage variable */}
+      <div style={{
+        background: darkMode ? '#1e293b' : '#ffffff',
+        padding: '24px',
+        borderRadius: '16px',
+        border: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`,
+        marginBottom: '40px',
+        boxShadow: darkMode ? '0 2px 4px rgba(0,0,0,0.1)' : '0 2px 4px rgba(0,0,0,0.05)'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '16px'
+        }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '600' }}>Today&apos;s Case Progress</h3>
+          <span style={{ 
+            color: '#10b981', 
+            fontWeight: '600',
+            fontSize: '14px'
+          }}>
+            {Math.round(progressPercentage)}% Complete
+          </span>
+        </div>
+        
+        <div style={{
+          height: '12px',
+          background: darkMode ? '#334155' : '#e2e8f0',
+          borderRadius: '6px',
+          overflow: 'hidden'
+        }}>
+          <div style={{
+            width: `${progressPercentage}%`,
+            height: '100%',
+            background: 'linear-gradient(90deg, #3b82f6, #8b5cf6)',
+            borderRadius: '6px',
+            transition: 'width 0.5s ease'
+          }} />
+        </div>
+        
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          marginTop: '12px',
+          color: darkMode ? '#94a3b8' : '#64748b',
+          fontSize: '14px'
+        }}>
+          <span>✅ {teamData.tasksCompleted} Cases Completed</span>
+          <span>⏳ {teamData.tasksInProgress} In Progress</span>
+          <span>📋 {teamData.totalTasks} Total Cases</span>
+        </div>
+      </div>
+
       {/* ========== CRIME SCRIPT PROCESSING ENGINE ========== */}
       <div style={{
         marginTop: '40px',
@@ -1030,7 +1083,7 @@ Evidence Needed:
         </div>
       </div>
 
-      {/* Team Members Section (Rest of the component remains the same) */}
+      {/* Team Members Section */}
       <div style={{
         marginTop: '40px',
         background: darkMode ? '#1e293b' : '#ffffff',
