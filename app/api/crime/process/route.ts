@@ -65,6 +65,8 @@ interface ProcessMetadata {
   scriptLength?: number;
   teamId?: string;
   requestedBy?: string;
+  archiveResults?: ArchiveSearchResult;
+  driveLink?: string;
   [key: string]: unknown;
 }
 
