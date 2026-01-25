@@ -110,15 +110,15 @@ export default function TeamPage() {
   // Calculate progress percentage
   const progressPercentage = (teamData.tasksCompleted / teamData.totalTasks) * 100;
 
-  // n8n send function
-  const sendToN8n = async () => {
+  // Process script function
+  const processScript = async () => {
     const textarea = textareaRef.current;
-    const button = document.getElementById('sendToN8nBtn') as HTMLButtonElement;
-    const statusDiv = document.getElementById('n8nStatus');
+    const button = document.getElementById('processScriptBtn') as HTMLButtonElement;
+    const statusDiv = document.getElementById('processingStatus');
     
     if (!textarea || !textarea.value.trim()) {
       if (statusDiv) {
-        statusDiv.innerHTML = '⚠️ Please enter some content first';
+        statusDiv.innerHTML = '⚠️ Please enter a script first';
         statusDiv.style.color = '#f59e0b';
       }
       return;
@@ -127,25 +127,25 @@ export default function TeamPage() {
     // Disable button and show loading
     if (button) {
       button.disabled = true;
-      button.innerHTML = '🔄 Processing...';
+      button.innerHTML = '🔄 Processing Script...';
     }
     
     if (statusDiv) {
-      statusDiv.innerHTML = '🔄 Sending to n8n workflow...';
+      statusDiv.innerHTML = '🔄 Analyzing and distributing script to workflows...';
       statusDiv.style.color = '#3b82f6';
     }
 
     try {
-      const response = await fetch('/api/n8n/send', {
+      const response = await fetch('/api/scripts/process', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          content: textarea.value,
+          script: textarea.value,
           timestamp: new Date().toISOString(),
           source: 'team-dashboard',
-          action: 'process_content',
+          action: 'process_script',
           metadata: {
             team_members: teamData.members,
             productivity: teamData.productivity,
@@ -158,7 +158,7 @@ export default function TeamPage() {
 
       if (response.ok && data.success) {
         if (statusDiv) {
-          statusDiv.innerHTML = '✅ Successfully sent to n8n workflow!';
+          statusDiv.innerHTML = '✅ Script processed successfully! Workflows initiated.';
           statusDiv.style.color = '#10b981';
         }
         textarea.value = ''; // Clear input
@@ -168,21 +168,21 @@ export default function TeamPage() {
         if (charCount) charCount.textContent = '0';
       } else {
         if (statusDiv) {
-          statusDiv.innerHTML = `❌ Error: ${data.error || 'Failed to send'}`;
+          statusDiv.innerHTML = `❌ Processing error: ${data.error || 'Please try again'}`;
           statusDiv.style.color = '#ef4444';
         }
       }
     } catch (error) {
       if (statusDiv) {
-        statusDiv.innerHTML = '❌ Network error. Please try again.';
+        statusDiv.innerHTML = '❌ Connection error. Please try again.';
         statusDiv.style.color = '#ef4444';
       }
-      console.error('Error sending to n8n:', error);
+      console.error('Error processing script:', error);
     } finally {
       // Re-enable button
       if (button) {
         button.disabled = false;
-        button.innerHTML = '🚀 Send to n8n';
+        button.innerHTML = '⚡ Process Script';
       }
     }
   };
@@ -790,16 +790,16 @@ Action Items:
         </div>
       </div>
 
-      {/* ========== N8N INTEGRATION SECTION ========== */}
+      {/* ========== SCRIPT PROCESSING ENGINE ========== */}
       <div style={{
         marginTop: '40px',
         background: darkMode ? '#1e293b' : '#ffffff',
         padding: '32px',
         borderRadius: '20px',
-        border: `2px solid ${darkMode ? '#3b82f6' : '#3b82f6'}`,
+        border: `2px solid ${darkMode ? '#06b6d4' : '#06b6d4'}`,
         boxShadow: darkMode ? 
-          '0 10px 25px -5px rgba(59, 130, 246, 0.2)' : 
-          '0 10px 25px -5px rgba(59, 130, 246, 0.1)'
+          '0 10px 25px -5px rgba(6, 182, 212, 0.2)' : 
+          '0 10px 25px -5px rgba(6, 182, 212, 0.1)'
       }}>
         <div style={{
           display: 'flex',
@@ -811,43 +811,75 @@ Action Items:
             width: '56px',
             height: '56px',
             borderRadius: '14px',
-            background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+            background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             fontSize: '28px'
           }}>
-            🤖
+            ⚙️
           </div>
           <div>
             <h2 style={{ fontSize: '24px', fontWeight: '700' }}>
-              n8n Automation Hub
+              Script Processing Engine
             </h2>
             <p style={{ 
               color: darkMode ? '#94a3b8' : '#64748b',
               fontSize: '14px',
               marginTop: '4px'
             }}>
-              Send content directly to your n8n workflows for processing
+              Enter scripts to automatically distribute work across the team
             </p>
           </div>
         </div>
 
-        {/* Content Input Area */}
+        {/* Script Input Area */}
         <div style={{ marginBottom: '24px' }}>
+          <div style={{
+            marginBottom: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <div style={{
+              padding: '6px 12px',
+              background: darkMode ? '#0f172a' : '#f1f5f9',
+              borderRadius: '6px',
+              fontSize: '12px',
+              fontWeight: '600',
+              color: '#06b6d4'
+            }}>
+              🎬 SCRIPT INPUT
+            </div>
+            <div style={{
+              color: darkMode ? '#64748b' : '#94a3b8',
+              fontSize: '13px'
+            }}>
+              Enter your video script or production instructions
+            </div>
+          </div>
+          
           <textarea
             ref={textareaRef}
-            id="n8nContentInput"
-            placeholder={`📝 Paste your content here...
+            id="scriptInput"
+            placeholder={`🎯 Enter your production script here...
 
-Examples:
-• Video scripts for Family Guy episodes
-• Voiceover recording instructions  
-• Editing notes and timelines
-• Task assignments for team members
-• Any content that needs automation
-• AI processing requests
-• Workflow triggers`}
+Example Script Structure:
+• [SCENE 1] - Intro with Peter Griffin
+• [VOICEOVER] - Narration by Sarah
+• [VISUALS] - Animated sequence by Mike
+• [MUSIC] - Background score timing
+• [EFFECTS] - Sound effects for scene
+• [EDITING] - Cut transitions at 0:30
+• [SUBTITLES] - Add caption for joke
+• [FINAL REVIEW] - Quality check by Lisa
+
+Tips:
+• Use clear scene markers
+• Specify voice actors
+• Include timing notes
+• Add visual descriptions
+• Mark editing points`}
             style={{
               width: '100%',
               height: '200px',
@@ -863,7 +895,7 @@ Examples:
               outline: 'none',
               transition: 'all 0.3s ease'
             }}
-            onFocus={(e) => e.target.style.border = `1px solid #3b82f6`}
+            onFocus={(e) => e.target.style.border = `1px solid #06b6d4`}
             onBlur={(e) => e.target.style.border = `1px solid ${darkMode ? '#334155' : '#cbd5e1'}`}
           />
           
@@ -877,7 +909,7 @@ Examples:
               color: darkMode ? '#94a3b8' : '#64748b',
               fontSize: '14px'
             }}>
-              Supports text, markdown, JSON, or any structured content
+              Scripts are analyzed and assigned to relevant team members automatically
             </div>
             <div style={{
               color: darkMode ? '#64748b' : '#94a3b8',
@@ -897,13 +929,13 @@ Examples:
           marginBottom: '24px'
         }}>
           <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px' }}>
-            📁 Or upload a file:
+            📁 Import script from file:
           </h3>
           <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
             <input
               type="file"
               id="fileUpload"
-              accept=".txt,.md,.json,.csv,.docx,.pdf"
+              accept=".txt,.md,.docx,.pdf,.json"
               style={{
                 flex: '1',
                 minWidth: '200px',
@@ -922,7 +954,7 @@ Examples:
               color: darkMode ? '#94a3b8' : '#64748b',
               fontSize: '13px'
             }}>
-              Supports: .txt, .md, .json, .csv, .docx, .pdf
+              Supports: .txt (recommended), .md, .docx, .pdf, .json
             </div>
           </div>
         </div>
@@ -930,11 +962,11 @@ Examples:
         {/* Action Buttons */}
         <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
           <button
-            id="sendToN8nBtn"
+            id="processScriptBtn"
             style={{
               flex: '1',
               padding: '16px 24px',
-              background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+              background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
               color: 'white',
               border: 'none',
               borderRadius: '10px',
@@ -949,9 +981,9 @@ Examples:
             }}
             onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
             onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-            onClick={sendToN8n}
+            onClick={processScript}
           >
-            🚀 Send to n8n
+            ⚡ Process Script
           </button>
           
           <button
@@ -979,7 +1011,7 @@ Examples:
 
         {/* Status Message */}
         <div
-          id="n8nStatus"
+          id="processingStatus"
           style={{
             padding: '16px',
             background: darkMode ? '#0f172a' : '#f8fafc',
@@ -995,10 +1027,10 @@ Examples:
             marginBottom: '24px'
           }}
         >
-          💡 Enter content above and click "Send to n8n"
+          💡 Enter your production script above and click "Process Script"
         </div>
 
-        {/* Templates Section */}
+        {/* Script Templates */}
         <div style={{
           background: darkMode ? '#0f172a' : '#f8fafc',
           padding: '20px',
@@ -1006,14 +1038,14 @@ Examples:
           border: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`
         }}>
           <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '16px' }}>
-            ⚡ Quick Templates
+            📝 Quick Script Templates
           </h3>
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
             {[
-              { label: 'Video Script', emoji: '🎬', template: 'Video Script Template\n\nTitle:\nDuration:\nVoiceover Notes:\nVisual Elements:\nCall to Action:' },
-              { label: 'Team Task', emoji: '📋', template: 'Task Assignment\n\nAssignee:\nPriority:\nDeadline:\nDescription:\nSuccess Criteria:' },
-              { label: 'Meeting Notes', emoji: '📝', template: 'Meeting Notes\n\nDate:\nAttendees:\nAgenda:\nDecisions:\nAction Items:' },
-              { label: 'Content Brief', emoji: '📄', template: 'Content Brief\n\nTopic:\nTarget Audience:\nKey Points:\nFormat:\nSEO Keywords:' }
+              { label: 'Family Guy Scene', emoji: '🎬', template: '[SCENE START]\nCharacters: Peter, Lois, Chris\nDuration: 45 seconds\n\nPeter: "Hey Lois, remember that time I..."\nLois: "Peter, not again!"\nChris: "Hehe, cool"\n\n[VISUALS]\n• Cutaway gag: Peter as astronaut\n• Background: Living room\n• Lighting: Evening warm\n\n[SOUND]\n• Laugh track after joke\n• Transition whoosh\n• Ending theme sting' },
+              { label: 'Voiceover Script', emoji: '🎙️', template: '[VOICEOVER SCRIPT]\nVoice Artist: Sarah\nPace: Medium, friendly\nTone: Engaging, slightly humorous\n\n"Welcome back to another episode! Today, we\'re diving into the world of animated comedy...\n\n[PAUSE: 2 seconds for visual]\n\n...where every frame tells a story, and every character has a voice!"\n\n[NOTES]\n• Emphasize "animated comedy"\n• Smile while speaking\n• Natural pauses for effect' },
+              { label: 'Animation Brief', emoji: '🎨', template: '[ANIMATION BRIEF]\nScene: 02\nStyle: Family Guy exaggerated\nCharacters: 3\nBackground: Detailed living room\n\n[KEY FRAMES]\n1. Peter enters left frame\n2. Lois reacts with hand on hip\n3. Chris looks up from phone\n4. Cutaway gag transition\n\n[SPECIAL EFFECTS]\n• Squash and stretch on reaction\n• Motion lines for fast moves\n• Pop-up text for joke' },
+              { label: 'Editing Notes', emoji: '✂️', template: '[EDITING INSTRUCTIONS]\nProject: Episode 45\nEditor: David\nTotal Runtime: 22 minutes\n\n[CUT POINTS]\n• Trim 2 sec from intro\n• Fade transition at 5:30\n• Crossfade audio at 8:15\n• Hard cut for joke at 12:00\n\n[EFFECTS TO ADD]\n• Color grade: Warm palette\n• Sound normalize all tracks\n• Add subtitles with .5s delay\n• End credits roll: 30 seconds' }
             ].map((template, index) => (
               <button
                 key={index}
@@ -1041,33 +1073,49 @@ Examples:
           </div>
         </div>
 
-        {/* Instructions */}
+        {/* How It Works */}
         <div style={{
           marginTop: '24px',
           padding: '20px',
-          background: darkMode ? 'rgba(59, 130, 246, 0.1)' : 'rgba(59, 130, 246, 0.05)',
-          border: `1px solid ${darkMode ? 'rgba(59, 130, 246, 0.3)' : 'rgba(59, 130, 246, 0.2)'}`,
+          background: darkMode ? 'rgba(6, 182, 212, 0.1)' : 'rgba(6, 182, 212, 0.05)',
+          border: `1px solid ${darkMode ? 'rgba(6, 182, 212, 0.3)' : 'rgba(6, 182, 212, 0.2)'}`,
           borderRadius: '12px',
           color: darkMode ? '#94a3b8' : '#64748b',
           fontSize: '14px',
           lineHeight: '1.6'
         }}>
-          <h4 style={{ color: '#3b82f6', fontSize: '15px', fontWeight: '600', marginBottom: '12px' }}>
-            💡 How n8n Integration Works:
+          <h4 style={{ color: '#06b6d4', fontSize: '15px', fontWeight: '600', marginBottom: '12px' }}>
+            ⚙️ How the Processing Engine Works:
           </h4>
           <ol style={{ paddingLeft: '20px', marginBottom: '12px' }}>
-            <li>Team enters content in the box above</li>
-            <li>Click "Send to n8n" to trigger your workflow</li>
-            <li>Content is sent to your n8n webhook URL</li>
-            <li>n8n processes the content (AI, automation, etc.)</li>
-            <li>Results are delivered to your configured destinations</li>
+            <li><strong>Script Analysis:</strong> Engine reads and understands your script structure</li>
+            <li><strong>Task Extraction:</strong> Identifies voiceover, animation, editing, and QA requirements</li>
+            <li><strong>Smart Assignment:</strong> Automatically assigns tasks to available team members</li>
+            <li><strong>Workflow Creation:</strong> Sets up timelines, dependencies, and notifications</li>
+            <li><strong>Progress Tracking:</strong> Monitors completion and updates the dashboard in real-time</li>
           </ol>
           <div style={{ 
-            color: darkMode ? '#3b82f6' : '#2563eb',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            marginTop: '16px',
+            padding: '12px',
+            background: darkMode ? 'rgba(6, 182, 212, 0.15)' : 'rgba(6, 182, 212, 0.1)',
+            borderRadius: '8px',
             fontSize: '13px',
             fontWeight: '500'
           }}>
-            🔗 Connected to: Your n8n workflow
+            <div style={{ 
+              width: '8px', 
+              height: '8px', 
+              borderRadius: '50%', 
+              background: '#10b981',
+              animation: 'pulse 1.5s infinite'
+            }} />
+            <span style={{ color: '#10b981' }}>ENGINE STATUS: ACTIVE</span>
+            <span style={{ marginLeft: 'auto', color: darkMode ? '#64748b' : '#94a3b8' }}>
+              Last processed: Just now
+            </span>
           </div>
         </div>
       </div>
