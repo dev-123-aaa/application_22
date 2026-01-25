@@ -836,7 +836,7 @@ Action Items:
           <textarea
             id="n8nContentInput"
             placeholder={`📝 Paste your content here...
-            
+
 Examples:
 • Video scripts for Family Guy episodes
 • Voiceover recording instructions  
