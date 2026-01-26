@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
     let n8nData;
     try {
       n8nData = await n8nResponse.json();
-    } catch (e) {
+    } catch {
       // n8n might return empty response or non-JSON
       n8nData = { success: true };
     }
