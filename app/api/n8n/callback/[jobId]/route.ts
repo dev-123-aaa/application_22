@@ -2,20 +2,37 @@
 // app/api/n8n/callback/[jobId]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
+// CORS headers
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, User-Agent, X-API-Key',
+  'Access-Control-Max-Age': '86400',
+};
+
 // Simple in-memory storage for job status
-// In production, replace with Redis or database
 const jobStatusStore = new Map<string, any>();
 
 // Helper to clean old jobs
 function cleanupOldJobs() {
   const oneHourAgo = Date.now() - 60 * 60 * 1000;
-  // Convert Map entries to array first to avoid iterator issues
   const entries = Array.from(jobStatusStore.entries());
   for (const [jobId, job] of entries) {
     if (job.lastUpdated && new Date(job.lastUpdated).getTime() < oneHourAgo) {
       jobStatusStore.delete(jobId);
     }
   }
+}
+
+// Handle OPTIONS requests (CORS preflight)
+export async function OPTIONS(request: NextRequest) {
+  return NextResponse.json(
+    { success: true },
+    {
+      status: 200,
+      headers: corsHeaders,
+    }
+  );
 }
 
 // GET: Check job status
@@ -37,6 +54,8 @@ export async function GET(
         jobId,
         status: 'unknown',
         message: 'Job expired or never existed'
+      }, {
+        headers: corsHeaders,
       });
     }
 
@@ -50,13 +69,15 @@ export async function GET(
       duration: jobStatus.startedAt ? 
         Date.now() - new Date(jobStatus.startedAt).getTime() : 
         null
+    }, {
+      headers: corsHeaders,
     });
 
   } catch (error) {
     console.error('Error getting job status:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to get job status' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
@@ -123,13 +144,15 @@ export async function POST(
       message: 'Job status updated successfully',
       jobId,
       receivedUpdate: update
+    }, {
+      headers: corsHeaders,
     });
 
   } catch (error) {
     console.error('Error updating job status:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to update job status' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
