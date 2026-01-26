@@ -120,278 +120,277 @@ export default function TeamPage() {
   const progressPercentage = (teamData.tasksCompleted / teamData.totalTasks) * 100;
 
   // Process True Crime Script function
-const processCrimeScript = async () => {
-  const textarea = textareaRef.current;
-  const button = document.getElementById('processScriptBtn') as HTMLButtonElement;
-  const statusDiv = document.getElementById('processingStatus');
-  
-  if (!textarea || !textarea.value.trim()) {
-    if (statusDiv) {
-      statusDiv.innerHTML = '⚠️ Please enter a crime case script first';
-      statusDiv.style.color = '#f59e0b';
-    }
-    return;
-  }
-
-  // Clear previous results
-  setProcessingResults(null);
-
-  // Disable button and show loading
-  if (button) {
-    button.disabled = true;
-    button.innerHTML = '🚀 Triggering n8n...';
-    button.style.opacity = '0.7';
-  }
-  
-  if (statusDiv) {
-    statusDiv.innerHTML = '🔄 Preparing to send to n8n workflow...';
-    statusDiv.style.color = '#3b82f6';
-  }
-
-  try {
-    // Generate a unique job ID
-    const jobId = `crime_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  const processCrimeScript = async () => {
+    const textarea = textareaRef.current;
+    const button = document.getElementById('processScriptBtn') as HTMLButtonElement;
+    const statusDiv = document.getElementById('processingStatus');
     
-    console.log('Starting n8n processing with jobId:', jobId);
-
-    // Send to our API route (which forwards to n8n)
-    const response = await fetch('/api/n8n/trigger', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        crimeScript: textarea.value,
-        jobId: jobId,
-        callbackUrl: `${window.location.origin}/api/n8n/callback/${jobId}`,
-        metadata: {
-          caseName: extractCaseName(textarea.value),
-          year: extractYear(textarea.value),
-          scriptLength: textarea.value.length,
-          timestamp: new Date().toISOString()
-        }
-      }),
-    });
-
-    const result = await response.json();
-
-    if (!response.ok || !result.success) {
-      throw new Error(result.error || 'Failed to trigger n8n workflow');
-    }
-
-    console.log('✅ Successfully sent to n8n:', result);
-    
-    // Update UI
-    if (statusDiv) {
-      statusDiv.innerHTML = '✅ Sent to n8n! Starting evidence collection...';
-      statusDiv.style.color = '#10b981';
-    }
-    
-    if (button) {
-      button.innerHTML = '⏳ n8n Processing...';
-    }
-    
-    // Start polling for updates
-    startJobPolling(jobId);
-    
-  } catch (error) {
-    console.error('❌ Error processing crime script:', error);
-    
-    // Show error to user
-    if (statusDiv) {
-      statusDiv.innerHTML = `❌ Error: ${error instanceof Error ? error.message : 'Failed to process script'}`;
-      statusDiv.style.color = '#ef4444';
-    }
-    
-    // Re-enable button
-    if (button) {
-      button.disabled = false;
-      button.innerHTML = '🔍 Process Crime Script';
-      button.style.opacity = '1';
-    }
-  }
-};
-  // Helper to extract case name from script
-const extractCaseName = (script: string): string => {
-  const caseMatch = script.match(/CASE:\s*(.+)/i) || script.match(/Case:\s*(.+)/i);
-  if (caseMatch) {
-    return caseMatch[1].trim().substring(0, 100);
-  }
-  
-  // Try to find case name from first line
-  const firstLine = script.split('\n')[0].trim();
-  if (firstLine.length > 10 && firstLine.length < 100) {
-    return firstLine;
-  }
-  
-  return 'Unknown Case';
-};
-
-// Helper to extract year from script
-const extractYear = (script: string): string => {
-  const yearMatch = script.match(/\b(19|20)\d{2}\b/);
-  return yearMatch ? yearMatch[0] : new Date().getFullYear().toString();
-};
-  // ========== ADD THIS POLLING FUNCTION ==========
-
-const startJobPolling = (jobId: string) => {
-  const statusDiv = document.getElementById('processingStatus');
-  const button = document.getElementById('processScriptBtn') as HTMLButtonElement;
-  
-  let pollCount = 0;
-  const maxPolls = 120; // Poll for up to 10 minutes (120 * 5 seconds)
-  
-  const poll = async () => {
-    if (pollCount >= maxPolls) {
+    if (!textarea || !textarea.value.trim()) {
       if (statusDiv) {
-        statusDiv.innerHTML = '⏱️ Processing is taking longer than expected. Check back later.';
+        statusDiv.innerHTML = '⚠️ Please enter a crime case script first';
         statusDiv.style.color = '#f59e0b';
       }
+      return;
+    }
+
+    // Clear previous results
+    setProcessingResults(null);
+
+    // Disable button and show loading
+    if (button) {
+      button.disabled = true;
+      button.innerHTML = '🚀 Triggering n8n...';
+      button.style.opacity = '0.7';
+    }
+    
+    if (statusDiv) {
+      statusDiv.innerHTML = '🔄 Preparing to send to n8n workflow...';
+      statusDiv.style.color = '#3b82f6';
+    }
+
+    try {
+      // Generate a unique job ID
+      const jobId = `crime_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      
+      console.log('Starting n8n processing with jobId:', jobId);
+
+      // Send to our API route (which forwards to n8n)
+      const response = await fetch('/api/n8n/trigger', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          crimeScript: textarea.value,
+          jobId: jobId,
+          callbackUrl: `${window.location.origin}/api/n8n/callback/${jobId}`,
+          metadata: {
+            caseName: extractCaseName(textarea.value),
+            year: extractYear(textarea.value),
+            scriptLength: textarea.value.length,
+            timestamp: new Date().toISOString()
+          }
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to trigger n8n workflow');
+      }
+
+      console.log('✅ Successfully sent to n8n:', result);
+      
+      // Update UI
+      if (statusDiv) {
+        statusDiv.innerHTML = '✅ Sent to n8n! Starting evidence collection...';
+        statusDiv.style.color = '#10b981';
+      }
+      
+      if (button) {
+        button.innerHTML = '⏳ n8n Processing...';
+      }
+      
+      // Start polling for updates
+      startJobPolling(jobId);
+      
+    } catch (error) {
+      console.error('❌ Error processing crime script:', error);
+      
+      // Show error to user
+      if (statusDiv) {
+        statusDiv.innerHTML = `❌ Error: ${error instanceof Error ? error.message : 'Failed to process script'}`;
+        statusDiv.style.color = '#ef4444';
+      }
+      
+      // Re-enable button
       if (button) {
         button.disabled = false;
         button.innerHTML = '🔍 Process Crime Script';
         button.style.opacity = '1';
       }
-      return;
+    }
+  };
+
+  // Helper to extract case name from script
+  const extractCaseName = (script: string): string => {
+    const caseMatch = script.match(/CASE:\s*(.+)/i) || script.match(/Case:\s*(.+)/i);
+    if (caseMatch) {
+      return caseMatch[1].trim().substring(0, 100);
     }
     
-    pollCount++;
+    // Try to find case name from first line
+    const firstLine = script.split('\n')[0].trim();
+    if (firstLine.length > 10 && firstLine.length < 100) {
+      return firstLine;
+    }
     
-    try {
-      const response = await fetch(`/api/n8n/callback/${jobId}`);
-      const data = await response.json();
-      
-      if (!data.success) {
-        // Job not found or error
-        setTimeout(poll, 5000);
+    return 'Unknown Case';
+  };
+
+  // Helper to extract year from script
+  const extractYear = (script: string): string => {
+    const yearMatch = script.match(/\b(19|20)\d{2}\b/);
+    return yearMatch ? yearMatch[0] : new Date().getFullYear().toString();
+  };
+
+  // ========== POLLING FUNCTION ==========
+  const startJobPolling = (jobId: string) => {
+    const statusDiv = document.getElementById('processingStatus');
+    const button = document.getElementById('processScriptBtn') as HTMLButtonElement;
+    
+    let pollCount = 0;
+    const maxPolls = 120; // Poll for up to 10 minutes (120 * 5 seconds)
+    
+    const poll = async () => {
+      if (pollCount >= maxPolls) {
+        if (statusDiv) {
+          statusDiv.innerHTML = '⏱️ Processing is taking longer than expected. Check back later.';
+          statusDiv.style.color = '#f59e0b';
+        }
+        if (button) {
+          button.disabled = false;
+          button.innerHTML = '🔍 Process Crime Script';
+          button.style.opacity = '1';
+        }
         return;
       }
       
-      // Update status display based on job status
-      updateStatusDisplay(data, statusDiv);
+      pollCount++;
       
-      // Check if job is complete or failed
-      if (data.status === 'completed') {
-        handleJobCompletion(data, jobId);
-        return; // Stop polling
+      try {
+        const response = await fetch(`/api/n8n/callback/${jobId}`);
+        const data = await response.json();
+        
+        if (!data.success) {
+          // Job not found or error
+          setTimeout(poll, 5000);
+          return;
+        }
+        
+        // Update status display based on job status
+        updateStatusDisplay(data, statusDiv);
+        
+        // Check if job is complete or failed
+        if (data.status === 'completed') {
+          handleJobCompletion(data, jobId);
+          return; // Stop polling
+        }
+        
+        if (data.status === 'failed') {
+          handleJobFailure(data, button, statusDiv);
+          return; // Stop polling
+        }
+        
+        // Continue polling
+        setTimeout(poll, 3000); // Poll every 3 seconds
+        
+      } catch (error) {
+        console.error('Polling error:', error);
+        setTimeout(poll, 5000);
       }
-      
-      if (data.status === 'failed') {
-        handleJobFailure(data, button, statusDiv);
-        return; // Stop polling
+    };
+    
+    // Start polling
+    poll();
+  };
+
+  // Helper function to update status display
+  const updateStatusDisplay = (jobData: any, statusDiv: HTMLElement | null) => {
+    if (!statusDiv) return;
+    
+    const statusMessages: Record<string, { message: string; color: string }> = {
+      pending: { message: '⏳ Waiting for n8n to start...', color: '#f59e0b' },
+      processing: { message: '🔄 n8n is processing your case...', color: '#3b82f6' },
+      searching_archives: { 
+        message: `🔍 Searching ${jobData.currentArchive || 'archives'}...`, 
+        color: '#8b5cf6' 
+      },
+      collecting_images: { 
+        message: `📸 Found ${jobData.imagesFound || 0} evidence images...`, 
+        color: '#3b82f6' 
+      },
+      uploading_to_drive: { 
+        message: '📁 Uploading to Google Drive...', 
+        color: '#10b981' 
+      },
+      organizing_results: { 
+        message: '🗂️ Organizing evidence...', 
+        color: '#06b6d4' 
       }
-      
-      // Continue polling
-      setTimeout(poll, 3000); // Poll every 3 seconds
-      
-    } catch (error) {
-      console.error('Polling error:', error);
-      setTimeout(poll, 5000);
+    };
+    
+    const statusInfo = statusMessages[jobData.status] || 
+      { message: `🔄 Status: ${jobData.status}`, color: '#3b82f6' };
+    
+    statusDiv.innerHTML = statusInfo.message;
+    statusDiv.style.color = statusInfo.color;
+    
+    // Add progress if available
+    if (jobData.progress !== undefined) {
+      statusDiv.innerHTML += ` (${jobData.progress}%)`;
     }
   };
-  
-  // Start polling
-  poll();
-};
 
-// Helper function to update status display
-const handleJobCompletion = (jobData: {
-  message?: string;
-  imagesFound?: number;
-  totalImages?: number;
-  driveLink?: string;
-  googleDriveLink?: string;
-  archivesSearched?: string[];
-  processingTime?: string;
-}, jobId: string) => {
-  if (!statusDiv) return;
-  
-  const statusMessages: Record<string, { message: string; color: string }> = {
-    pending: { message: '⏳ Waiting for n8n to start...', color: '#f59e0b' },
-    processing: { message: '🔄 n8n is processing your case...', color: '#3b82f6' },
-    searching_archives: { 
-      message: `🔍 Searching ${jobData.currentArchive || 'archives'}...`, 
-      color: '#8b5cf6' 
-    },
-    collecting_images: { 
-      message: `📸 Found ${jobData.imagesFound || 0} evidence images...`, 
-      color: '#3b82f6' 
-    },
-    uploading_to_drive: { 
-      message: '📁 Uploading to Google Drive...', 
-      color: '#10b981' 
-    },
-    organizing_results: { 
-      message: '🗂️ Organizing evidence...', 
-      color: '#06b6d4' 
+  // Single handleJobCompletion function
+  const handleJobCompletion = (jobData: any, jobId: string) => {
+    const statusDiv = document.getElementById('processingStatus');
+    const button = document.getElementById('processScriptBtn') as HTMLButtonElement;
+    
+    if (statusDiv) {
+      // Show final status from job data if available
+      if (jobData.message) {
+        statusDiv.innerHTML = jobData.message;
+      } else {
+        statusDiv.innerHTML = '✅ Evidence collection complete!';
+      }
+      statusDiv.style.color = '#10b981';
     }
+    
+    if (button) {
+      button.disabled = false;
+      button.innerHTML = '🔍 Process Crime Script';
+      button.style.opacity = '1';
+    }
+    
+    // Show results
+    setProcessingResults({
+      success: true,
+      message: jobData.message || 'Evidence collection completed via n8n',
+      imageCount: jobData.imagesFound || jobData.totalImages || 12,
+      driveLink: jobData.driveLink || jobData.googleDriveLink || 
+        `https://drive.google.com/drive/folders/1${jobId}`,
+      archivesSearched: jobData.archivesSearched || [
+        'National Crime Database',
+        'Historical Archives',
+        'Press Photo Library',
+        'Court Evidence Files'
+      ],
+      estimatedTime: jobData.processingTime || '3-5 minutes'
+    });
+    
+    console.log('🎉 Job completed:', jobData);
   };
-  
-  const statusInfo = statusMessages[jobData.status] || 
-    { message: `🔄 Status: ${jobData.status}`, color: '#3b82f6' };
-  
-  statusDiv.innerHTML = statusInfo.message;
-  statusDiv.style.color = statusInfo.color;
-  
-  // Add progress if available
-  if (jobData.progress !== undefined) {
-    statusDiv.innerHTML += ` (${jobData.progress}%)`;
-  }
-};
 
-// Helper function for job completion
-const handleJobCompletion = (jobData: any, jobId: string) => {
-  const statusDiv = document.getElementById('processingStatus');
-  const button = document.getElementById('processScriptBtn') as HTMLButtonElement;
-  
-  if (statusDiv) {
-    statusDiv.innerHTML = '✅ Evidence collection complete!';
-    statusDiv.style.color = '#10b981';
-  }
-  
-  if (button) {
-    button.disabled = false;
-    button.innerHTML = '🔍 Process Crime Script';
-    button.style.opacity = '1';
-  }
-  
-  // Show results
-  setProcessingResults({
-    success: true,
-    message: jobData.message || 'Evidence collection completed via n8n',
-    imageCount: jobData.imagesFound || jobData.totalImages || 12,
-    driveLink: jobData.driveLink || jobData.googleDriveLink || 
-      `https://drive.google.com/drive/folders/1${jobId}`,
-    archivesSearched: jobData.archivesSearched || [
-      'National Crime Database',
-      'Historical Archives',
-      'Press Photo Library',
-      'Court Evidence Files'
-    ],
-    estimatedTime: jobData.processingTime || '3-5 minutes'
-  });
-  
-  console.log('🎉 Job completed:', jobData);
-};
+  // Helper function for job failure
+  const handleJobFailure = (jobData: any, button: HTMLButtonElement | null, statusDiv: HTMLElement | null) => {
+    if (statusDiv) {
+      statusDiv.innerHTML = `❌ Processing failed: ${jobData.error || 'Unknown error'}`;
+      statusDiv.style.color = '#ef4444';
+    }
+    
+    if (button) {
+      button.disabled = false;
+      button.innerHTML = '🔍 Try Again';
+      button.style.opacity = '1';
+    }
+    
+    setProcessingResults({
+      success: false,
+      message: jobData.error || 'Processing failed'
+    });
+  };
 
-// Helper function for job failure
-const handleJobFailure = (jobData: any, button: HTMLButtonElement | null, statusDiv: HTMLElement | null) => {
-  if (statusDiv) {
-    statusDiv.innerHTML = `❌ Processing failed: ${jobData.error || 'Unknown error'}`;
-    statusDiv.style.color = '#ef4444';
-  }
-  
-  if (button) {
-    button.disabled = false;
-    button.innerHTML = '🔍 Try Again';
-    button.style.opacity = '1';
-  }
-  
-  setProcessingResults({
-    success: false,
-    message: jobData.error || 'Processing failed'
-  });
-};
   // Insert crime case template
   const insertCrimeTemplate = (templateType: string) => {
     const textarea = textareaRef.current;
