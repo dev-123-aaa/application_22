@@ -37,7 +37,6 @@ export default function TeamPage() {
     archivesSearched?: string[];
     estimatedTime?: string;
   } | null>(null);
-const [currentJobId, setCurrentJobId] = useState<string | null>(null);
   
   const productivityRef = useRef(78);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
