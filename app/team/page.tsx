@@ -295,7 +295,15 @@ const startJobPolling = (jobId: string) => {
 };
 
 // Helper function to update status display
-const updateStatusDisplay = (jobData: any, statusDiv: HTMLElement | null) => {
+const handleJobCompletion = (jobData: {
+  message?: string;
+  imagesFound?: number;
+  totalImages?: number;
+  driveLink?: string;
+  googleDriveLink?: string;
+  archivesSearched?: string[];
+  processingTime?: string;
+}, jobId: string) => {
   if (!statusDiv) return;
   
   const statusMessages: Record<string, { message: string; color: string }> = {
