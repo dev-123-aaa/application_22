@@ -9,7 +9,9 @@ const jobStatusStore = new Map<string, any>();
 // Helper to clean old jobs
 function cleanupOldJobs() {
   const oneHourAgo = Date.now() - 60 * 60 * 1000;
-  for (const [jobId, job] of jobStatusStore.entries()) {
+  // Convert Map entries to array first to avoid iterator issues
+  const entries = Array.from(jobStatusStore.entries());
+  for (const [jobId, job] of entries) {
     if (job.lastUpdated && new Date(job.lastUpdated).getTime() < oneHourAgo) {
       jobStatusStore.delete(jobId);
     }
