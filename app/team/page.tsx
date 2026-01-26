@@ -386,132 +386,6 @@ EVIDENCE COLLECTION:
       fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
       transition: 'all 0.3s ease'
     }}>
-      {/* Stats Cards Grid - Moved to top */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-        gap: '24px',
-        marginBottom: '40px'
-      }}>
-        {[
-          { 
-            title: 'Active Editors', 
-            value: teamData.members, 
-            subtitle: 'Currently working',
-            icon: '👥',
-            trend: `${teamData.active}/${teamData.members} online`,
-            color: '#3b82f6'
-          },
-          { 
-            title: 'Cases Processed', 
-            value: teamData.tasksCompleted, 
-            subtitle: 'Completed today',
-            icon: '📁',
-            trend: `+${Math.floor(teamData.tasksCompleted / 6)} per hour`,
-            color: '#10b981'
-          },
-          { 
-            title: 'Evidence Accuracy', 
-            value: `${teamData.productivity}%`, 
-            subtitle: 'Image match rate',
-            icon: '🎯',
-            trend: teamData.weeklyTrend,
-            color: '#f59e0b'
-          },
-          { 
-            title: 'Archive Access', 
-            value: '12+', 
-            subtitle: 'Databases connected',
-            icon: '🗃️',
-            trend: '3 new this month',
-            color: '#8b5cf6'
-          }
-        ].map((stat, index) => (
-          <div key={index} style={{
-            background: darkMode ? 
-              'linear-gradient(145deg, #1e293b, #0f172a)' : 
-              'linear-gradient(145deg, #ffffff, #f1f5f9)',
-            padding: '28px',
-            borderRadius: '16px',
-            border: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`,
-            boxShadow: darkMode ? 
-              '0 4px 6px -1px rgba(0, 0, 0, 0.2)' : 
-              '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-            position: 'relative',
-            overflow: 'hidden'
-          }}>
-            <div style={{ 
-              position: 'absolute', 
-              top: '-20px', 
-              right: '-20px',
-              fontSize: '80px',
-              opacity: '0.1',
-              transform: 'rotate(15deg)'
-            }}>
-              {stat.icon}
-            </div>
-            
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '12px',
-              marginBottom: '16px'
-            }}>
-              <div style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: '12px',
-                background: `${stat.color}20`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '24px'
-              }}>
-                {stat.icon}
-              </div>
-              <div>
-                <div style={{ 
-                  color: darkMode ? '#94a3b8' : '#64748b',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  marginBottom: '4px'
-                }}>
-                  {stat.title}
-                </div>
-                <div style={{ 
-                  fontSize: '32px', 
-                  fontWeight: '700',
-                  background: `linear-gradient(135deg, ${stat.color}, ${stat.color}dd)`,
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent'
-                }}>
-                  {stat.value}
-                </div>
-              </div>
-            </div>
-            
-            <div style={{ 
-              color: darkMode ? '#64748b' : '#94a3b8',
-              fontSize: '14px',
-              marginBottom: '8px'
-            }}>
-              {stat.subtitle}
-            </div>
-            
-            <div style={{ 
-              color: stat.color,
-              fontSize: '13px',
-              fontWeight: '600',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}>
-              ↗️ {stat.trend}
-            </div>
-          </div>
-        ))}
-      </div>
-
       {/* Progress Bar - Now using the progressPercentage variable */}
       <div style={{
         background: darkMode ? '#1e293b' : '#ffffff',
@@ -1281,7 +1155,7 @@ Evidence Needed:
         </div>
       </div>
 
-      {/* ========== DASHBOARD HEADER - MOVED TO BOTTOM ========== */}
+      {/* ========== DASHBOARD STATS SECTION - MOVED TO BOTTOM ========== */}
       <div style={{
         marginTop: '40px',
         padding: '40px',
@@ -1295,6 +1169,7 @@ Evidence Needed:
           '0 20px 40px -15px rgba(0, 0, 0, 0.1)',
         textAlign: 'center'
       }}>
+        {/* Dashboard Title */}
         <div style={{
           fontSize: '48px',
           marginBottom: '16px',
@@ -1316,6 +1191,133 @@ Evidence Needed:
           Real-time team performance & evidence collection system
         </p>
 
+        {/* Stats Cards Grid */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: '24px',
+          marginBottom: '40px'
+        }}>
+          {[
+            { 
+              title: 'Active Editors', 
+              value: teamData.members, 
+              subtitle: 'Currently working',
+              icon: '👥',
+              trend: `${teamData.active}/${teamData.members} online`,
+              color: '#3b82f6'
+            },
+            { 
+              title: 'Cases Processed', 
+              value: teamData.tasksCompleted, 
+              subtitle: 'Completed today',
+              icon: '📁',
+              trend: `+${Math.floor(teamData.tasksCompleted / 6)} per hour`,
+              color: '#10b981'
+            },
+            { 
+              title: 'Evidence Accuracy', 
+              value: `${teamData.productivity}%`, 
+              subtitle: 'Image match rate',
+              icon: '🎯',
+              trend: teamData.weeklyTrend,
+              color: '#f59e0b'
+            },
+            { 
+              title: 'Archive Access', 
+              value: '12+', 
+              subtitle: 'Databases connected',
+              icon: '🗃️',
+              trend: '3 new this month',
+              color: '#8b5cf6'
+            }
+          ].map((stat, index) => (
+            <div key={index} style={{
+              background: darkMode ? 
+                'linear-gradient(145deg, #1e293b, #0f172a)' : 
+                'linear-gradient(145deg, #ffffff, #f1f5f9)',
+              padding: '28px',
+              borderRadius: '16px',
+              border: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`,
+              boxShadow: darkMode ? 
+                '0 4px 6px -1px rgba(0, 0, 0, 0.2)' : 
+                '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              <div style={{ 
+                position: 'absolute', 
+                top: '-20px', 
+                right: '-20px',
+                fontSize: '80px',
+                opacity: '0.1',
+                transform: 'rotate(15deg)'
+              }}>
+                {stat.icon}
+              </div>
+              
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '12px',
+                marginBottom: '16px'
+              }}>
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '12px',
+                  background: `${stat.color}20`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '24px'
+                }}>
+                  {stat.icon}
+                </div>
+                <div>
+                  <div style={{ 
+                    color: darkMode ? '#94a3b8' : '#64748b',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    marginBottom: '4px'
+                  }}>
+                    {stat.title}
+                  </div>
+                  <div style={{ 
+                    fontSize: '32px', 
+                    fontWeight: '700',
+                    background: `linear-gradient(135deg, ${stat.color}, ${stat.color}dd)`,
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent'
+                  }}>
+                    {stat.value}
+                  </div>
+                </div>
+              </div>
+              
+              <div style={{ 
+                color: darkMode ? '#64748b' : '#94a3b8',
+                fontSize: '14px',
+                marginBottom: '8px'
+              }}>
+                {stat.subtitle}
+              </div>
+              
+              <div style={{ 
+                color: stat.color,
+                fontSize: '13px',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}>
+                ↗️ {stat.trend}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Dashboard Controls */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
