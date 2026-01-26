@@ -3,6 +3,22 @@
 
 import { useState, useEffect, useRef } from 'react';
 
+// Define interfaces for job data
+interface JobData {
+  message?: string;
+  imagesFound?: number;
+  totalImages?: number;
+  driveLink?: string;
+  googleDriveLink?: string;
+  archivesSearched?: string[];
+  processingTime?: string;
+  status?: string;
+  progress?: number;
+  currentArchive?: string;
+  error?: string;
+  [key: string]: any; // For other properties that might exist
+}
+
 export default function TeamPage() {
   const [teamData, setTeamData] = useState({
     members: 8,
@@ -260,7 +276,7 @@ export default function TeamPage() {
       
       try {
         const response = await fetch(`/api/n8n/callback/${jobId}`);
-        const data = await response.json();
+        const data: JobData & { success: boolean } = await response.json();
         
         if (!data.success) {
           // Job not found or error
@@ -296,7 +312,7 @@ export default function TeamPage() {
   };
 
   // Helper function to update status display
-  const updateStatusDisplay = (jobData: any, statusDiv: HTMLElement | null) => {
+  const updateStatusDisplay = (jobData: JobData, statusDiv: HTMLElement | null) => {
     if (!statusDiv) return;
     
     const statusMessages: Record<string, { message: string; color: string }> = {
@@ -320,8 +336,8 @@ export default function TeamPage() {
       }
     };
     
-    const statusInfo = statusMessages[jobData.status] || 
-      { message: `🔄 Status: ${jobData.status}`, color: '#3b82f6' };
+    const statusInfo = statusMessages[jobData.status || ''] || 
+      { message: `🔄 Status: ${jobData.status || 'unknown'}`, color: '#3b82f6' };
     
     statusDiv.innerHTML = statusInfo.message;
     statusDiv.style.color = statusInfo.color;
@@ -333,7 +349,7 @@ export default function TeamPage() {
   };
 
   // Single handleJobCompletion function
-  const handleJobCompletion = (jobData: any, jobId: string) => {
+  const handleJobCompletion = (jobData: JobData, jobId: string) => {
     const statusDiv = document.getElementById('processingStatus');
     const button = document.getElementById('processScriptBtn') as HTMLButtonElement;
     
@@ -373,7 +389,7 @@ export default function TeamPage() {
   };
 
   // Helper function for job failure
-  const handleJobFailure = (jobData: any, button: HTMLButtonElement | null, statusDiv: HTMLElement | null) => {
+  const handleJobFailure = (jobData: JobData, button: HTMLButtonElement | null, statusDiv: HTMLElement | null) => {
     if (statusDiv) {
       statusDiv.innerHTML = `❌ Processing failed: ${jobData.error || 'Unknown error'}`;
       statusDiv.style.color = '#ef4444';
@@ -1315,8 +1331,7 @@ Evidence Needed:
                       fontSize: '13px',
                       fontWeight: '600',
                       cursor: 'pointer'
-                    }}
-                  >
+                    }}>
                     🗑️ Remove
                   </button>
                 </div>
