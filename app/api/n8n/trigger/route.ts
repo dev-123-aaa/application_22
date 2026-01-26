@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { crimeScript, jobId, callbackUrl, metadata } = body;
 
-    console.log('📨 Received script from processing engine:', {
+    console.log('📨 Received script for n8n processing:', {
       jobId,
       scriptLength: crimeScript?.length,
       callbackUrl
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL;
     
     if (!N8N_WEBHOOK_URL) {
-      console.error('❌ Processing_Egine_URL is not configured');
+      console.error('❌ N8N_WEBHOOK_URL is not configured');
       return NextResponse.json(
         { 
           success: false, 
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('🚀 Sending to Processing Egine webhook:', N8N_WEBHOOK_URL);
+    console.log('🚀 Sending to n8n webhook:', N8N_WEBHOOK_URL);
 
     // Get the correct base URL for callbacks
     const baseUrl = getBaseUrl();
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
 
     if (!n8nResponse.ok) {
       const errorText = await n8nResponse.text();
-      console.error('❌ Processing Egine response error:', {
+      console.error('❌ n8n response error:', {
         status: n8nResponse.status,
         statusText: n8nResponse.statusText,
         error: errorText
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
       n8nData = { success: true };
     }
 
-    console.log('✅ Successfully sent to Processing Egine:', { jobId, n8nData });
+    console.log('✅ Successfully sent to n8n:', { jobId, n8nData });
 
     return NextResponse.json({
       success: true,
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Error triggering Processing Engine workflow:', error);
+    console.error('❌ Error triggering n8n workflow:', error);
     
     return NextResponse.json(
       { 
