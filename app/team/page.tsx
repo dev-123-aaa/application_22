@@ -386,67 +386,7 @@ EVIDENCE COLLECTION:
       fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
       transition: 'all 0.3s ease'
     }}>
-      {/* Header */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '40px',
-        flexWrap: 'wrap',
-        gap: '20px'
-      }}>
-        <div>
-          <h1 style={{ 
-            fontSize: '36px', 
-            marginBottom: '8px',
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            display: 'inline-block'
-          }}>
-            👥 True Crime Editors Dashboard
-          </h1>
-          <p style={{ 
-            color: darkMode ? '#94a3b8' : '#64748b',
-            fontSize: '16px'
-          }}>
-            Real-time team performance & evidence collection system
-          </p>
-        </div>
-        
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            style={{
-              padding: '10px 20px',
-              background: darkMode ? '#1e293b' : '#e2e8f0',
-              color: darkMode ? 'white' : '#0f172a',
-              border: `1px solid ${darkMode ? '#334155' : '#cbd5e1'}`,
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '500',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}
-          >
-            {darkMode ? '☀️ Light' : '🌙 Dark'}
-          </button>
-          
-          <div style={{
-            padding: '10px 20px',
-            background: darkMode ? '#1e293b' : '#e2e8f0',
-            border: `1px solid ${darkMode ? '#334155' : '#cbd5e1'}`,
-            borderRadius: '8px',
-            fontSize: '14px'
-          }}>
-            🕐 Last updated: Just now
-          </div>
-        </div>
-      </div>
-
-      {/* Stats Cards Grid */}
+      {/* Stats Cards Grid - Moved to top */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
@@ -1338,6 +1278,80 @@ Evidence Needed:
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* ========== DASHBOARD HEADER - MOVED TO BOTTOM ========== */}
+      <div style={{
+        marginTop: '40px',
+        padding: '40px',
+        background: darkMode ? 
+          'linear-gradient(145deg, #1e293b, #0f172a)' : 
+          'linear-gradient(145deg, #ffffff, #f1f5f9)',
+        borderRadius: '24px',
+        border: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`,
+        boxShadow: darkMode ? 
+          '0 20px 40px -15px rgba(0, 0, 0, 0.3)' : 
+          '0 20px 40px -15px rgba(0, 0, 0, 0.1)',
+        textAlign: 'center'
+      }}>
+        <div style={{
+          fontSize: '48px',
+          marginBottom: '16px',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #dc2626 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          display: 'inline-block',
+          fontWeight: '800'
+        }}>
+          👥 True Crime Editors Dashboard
+        </div>
+        
+        <p style={{ 
+          color: darkMode ? '#94a3b8' : '#64748b',
+          fontSize: '20px',
+          marginBottom: '40px',
+          fontWeight: '500'
+        }}>
+          Real-time team performance & evidence collection system
+        </p>
+
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginTop: '20px',
+          flexWrap: 'wrap',
+          gap: '20px'
+        }}>
+          <div style={{
+            padding: '10px 20px',
+            background: darkMode ? '#1e293b' : '#e2e8f0',
+            border: `1px solid ${darkMode ? '#334155' : '#cbd5e1'}`,
+            borderRadius: '8px',
+            fontSize: '14px'
+          }}>
+            🕐 Last updated: Just now
+          </div>
+          
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            style={{
+              padding: '10px 20px',
+              background: darkMode ? '#1e293b' : '#e2e8f0',
+              color: darkMode ? 'white' : '#0f172a',
+              border: `1px solid ${darkMode ? '#334155' : '#cbd5e1'}`,
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '500',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            {darkMode ? '☀️ Light Mode' : '🌙 Dark Mode'}
+          </button>
         </div>
       </div>
     </div>
