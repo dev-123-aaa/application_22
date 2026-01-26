@@ -25,7 +25,7 @@ function cleanupOldJobs() {
 }
 
 // Handle OPTIONS requests (CORS preflight)
-export async function OPTIONS(request: NextRequest) {
+export async function OPTIONS() {
   return NextResponse.json(
     { success: true },
     {
