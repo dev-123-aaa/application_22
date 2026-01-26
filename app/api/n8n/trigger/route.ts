@@ -1,23 +1,8 @@
 // app/api/n8n/trigger/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
-// Helper function to get the correct base URL
-const getBaseUrl = () => {
-  // In Vercel production
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
-  }
-  // In Vercel preview deployments
-  if (process.env.VERCEL_BRANCH_URL) {
-    return `https://${process.env.VERCEL_BRANCH_URL}`;
-  }
-  // Custom environment variable
-  if (process.env.NEXT_PUBLIC_BASE_URL) {
-    return process.env.NEXT_PUBLIC_BASE_URL;
-  }
-  // Fallback for local development
-  return 'http://localhost:3000';
-};
+// ALWAYS use production URL - hardcode it
+const PRODUCTION_URL = 'https://application-1.vercel.app';
 
 export async function POST(request: NextRequest) {
   try {
@@ -56,9 +41,9 @@ export async function POST(request: NextRequest) {
 
     console.log('🚀 Sending to n8n webhook:', N8N_WEBHOOK_URL);
 
-    // Get the correct base URL for callbacks
-    const baseUrl = getBaseUrl();
-    console.log('🌐 Using base URL for callbacks:', baseUrl);
+    // ALWAYS use production URL - no dynamic detection
+    const baseUrl = PRODUCTION_URL;
+    console.log('🌐 FORCING production URL for callbacks:', baseUrl);
 
     // Send to n8n webhook
     const n8nResponse = await fetch(N8N_WEBHOOK_URL, {
@@ -73,7 +58,7 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         crimeScript,
         jobId,
-        // Use the same callback URL structure
+        // FORCE production URL
         callbackUrl: `${baseUrl}/api/n8n/callback/${jobId}`,
         metadata: {
           ...metadata,
@@ -81,7 +66,7 @@ export async function POST(request: NextRequest) {
           scriptLength: crimeScript.length,
           source: 'true-crime-dashboard-v1'
         },
-        // This is what n8n should use to call back
+        // FORCE production URL - this is what n8n will use
         webhookCallback: `${baseUrl}/api/n8n/callback/${jobId}`
       }),
     });
@@ -114,8 +99,9 @@ export async function POST(request: NextRequest) {
       n8nResponse: n8nData,
       estimatedTime: 'Processing typically takes 2-5 minutes',
       nextStep: 'n8n will now search archives and collect evidence',
+      // Show the PRODUCTION callback URL
       callbackUrl: `${baseUrl}/api/n8n/callback/${jobId}`,
-      note: `n8n should POST updates to: ${baseUrl}/api/n8n/callback/${jobId}`
+      note: `n8n should POST updates to PRODUCTION: ${baseUrl}/api/n8n/callback/${jobId}`
     });
 
   } catch (error) {
@@ -130,7 +116,7 @@ export async function POST(request: NextRequest) {
           '1. Check if n8n instance is running',
           '2. Verify N8N_WEBHOOK_URL in .env',
           '3. Check n8n webhook node configuration',
-          '4. Ensure n8n can reach your callback URL'
+          `4. Ensure n8n can reach PRODUCTION: ${PRODUCTION_URL}`
         ]
       },
       { status: 500 }
@@ -140,13 +126,12 @@ export async function POST(request: NextRequest) {
 
 // Optional: GET endpoint to check API status
 export async function GET() {
-  const baseUrl = getBaseUrl();
-  
   return NextResponse.json({
     service: 'n8n Trigger API',
     status: 'operational',
     webhookConfigured: !!process.env.N8N_WEBHOOK_URL,
-    baseUrl: baseUrl,
+    // Always show production URL
+    productionUrl: PRODUCTION_URL,
     environment: process.env.NODE_ENV,
     supports: ['POST /api/n8n/trigger'],
     description: 'Trigger n8n workflows for crime script processing',
@@ -156,6 +141,7 @@ export async function GET() {
       callbackUrl: 'string (optional)',
       metadata: 'object (optional)'
     },
-    callbackPattern: `${baseUrl}/api/n8n/callback/{jobId}`
+    // Always production pattern
+    callbackPattern: `${PRODUCTION_URL}/api/n8n/callback/{jobId}`
   });
 }
